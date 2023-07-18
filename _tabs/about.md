@@ -1,3 +1,7 @@
 ---
-## Documentação pessoal de TI
+# the default layout is 'page'
+icon: fas fa-info-circle
+order: 4
 ---
+
+> Documentação pessoal de TI.
