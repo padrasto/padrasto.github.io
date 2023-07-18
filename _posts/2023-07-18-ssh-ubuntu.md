@@ -1,5 +1,5 @@
 ---
-title: Configuração inicial de um servidor Ubuntu
+title: ssh ubuntu
 author: pa3r1ck
 date: 2023-07-18 21:10:00 +0800
 categories: [ssh, Ubuntu]
