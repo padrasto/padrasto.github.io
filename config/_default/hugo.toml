@@ -1,0 +1,12 @@
+baseURL = 'https://padrasto.github.io/'
+defaultContentLanguage = "en"
+theme = 'hugo-theme-stack'
+
+[languages]
+    [languages.en]
+        languageName = "English"
+        title = "Padrasto's Linux Lab"
+        weight = 1
+        [languages.en.params.sidebar]
+            subtitle = "Linux sysadmin notes, homelab experiments, and open-source tools."
+            emoji = "🐧"

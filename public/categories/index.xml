@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Categories on Padrasto&#39;s Linux Lab</title>
+        <link>http://localhost:1313/categories/</link>
+        <description>Recent content in Categories on Padrasto&#39;s Linux Lab</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>en</language>
+        <lastBuildDate>Wed, 19 Jul 2023 20:10:00 +0800</lastBuildDate><atom:link href="http://localhost:1313/categories/index.xml" rel="self" type="application/rss+xml" /><item>
+            <title>Proxmox</title>
+            <link>http://localhost:1313/categories/proxmox/</link>
+            <pubDate>Wed, 19 Jul 2023 20:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/proxmox/</guid>
+            <description></description>
+        </item><item>
+            <title>Ssh</title>
+            <link>http://localhost:1313/categories/ssh/</link>
+            <pubDate>Tue, 18 Jul 2023 21:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/ssh/</guid>
+            <description></description>
+        </item><item>
+            <title>Ubuntu</title>
+            <link>http://localhost:1313/categories/ubuntu/</link>
+            <pubDate>Tue, 18 Jul 2023 21:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/ubuntu/</guid>
+            <description></description>
+        </item><item>
+            <title>Debian</title>
+            <link>http://localhost:1313/categories/debian/</link>
+            <pubDate>Wed, 03 May 2023 21:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/debian/</guid>
+            <description></description>
+        </item><item>
+            <title>Tor</title>
+            <link>http://localhost:1313/categories/tor/</link>
+            <pubDate>Wed, 03 May 2023 21:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/tor/</guid>
+            <description></description>
+        </item><item>
+            <title>Nmap</title>
+            <link>http://localhost:1313/categories/nmap/</link>
+            <pubDate>Mon, 13 Mar 2023 22:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/nmap/</guid>
+            <description></description>
+        </item><item>
+            <title>Kvm</title>
+            <link>http://localhost:1313/categories/kvm/</link>
+            <pubDate>Thu, 09 Mar 2023 21:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/kvm/</guid>
+            <description></description>
+        </item><item>
+            <title>Docker</title>
+            <link>http://localhost:1313/categories/docker/</link>
+            <pubDate>Tue, 28 Feb 2023 23:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/docker/</guid>
+            <description></description>
+        </item><item>
+            <title>Kali-Linux</title>
+            <link>http://localhost:1313/categories/kali-linux/</link>
+            <pubDate>Tue, 28 Feb 2023 23:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/kali-linux/</guid>
+            <description></description>
+        </item><item>
+            <title>Wireshark</title>
+            <link>http://localhost:1313/categories/wireshark/</link>
+            <pubDate>Sun, 26 Feb 2023 20:10:00 +0800</pubDate>
+            <guid>http://localhost:1313/categories/wireshark/</guid>
+            <description></description>
+        </item></channel>
+</rss>
