@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Server on Padrasto's Linux Lab</title><link>https://padrasto.github.io/tags/server/</link><description>Recent content in Server on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Wed, 18 Mar 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/tags/server/index.xml" rel="self" type="application/rss+xml"/><item><title>nginx on Ubuntu — Complete Setup and Troubleshooting Guide</title><link>https://padrasto.github.io/post/nginx-on-ubuntu-setup-and-troubleshooting/</link><pubDate>Wed, 18 Mar 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/nginx-on-ubuntu-setup-and-troubleshooting/</guid><description>&lt;img src="https://padrasto.github.io/" alt="Featured image of post nginx on Ubuntu — Complete Setup and Troubleshooting Guide" /&gt;&lt;p&gt;If you have ever received a call at 3 AM because a client&amp;rsquo;s site went down, you know there is no time to search through documentation. This is the guide I use in my day-to-day work — installation, configuration and the most common nginx problems on Ubuntu.&lt;/p&gt;
+&lt;h2 id="installation"&gt;Installation
+&lt;/h2&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install nginx -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Confirm it is running:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl status nginx
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Enable automatic start on boot — a lot of people forget this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl enable nginx
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl is-enabled nginx &lt;span style="color:#75715e"&gt;# should show &amp;#34;enabled&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="file-structure"&gt;File Structure
+&lt;/h2&gt;&lt;p&gt;After installation, nginx organises itself like this:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;/etc/nginx/
+├── nginx.conf # main configuration
+├── sites-available/ # available configs
+│ └── default
+└── sites-enabled/ # active configs (symlinks)
+ └── default -&amp;gt; ../sites-available/default
+
+/var/www/html/ # default web root
+/var/log/nginx/
+├── access.log # all HTTP requests
+└── error.log # internal nginx errors
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The separation between &lt;code&gt;sites-available&lt;/code&gt; and &lt;code&gt;sites-enabled&lt;/code&gt; matters. You can have multiple configs ready in &lt;code&gt;sites-available&lt;/code&gt; and enable or disable them with a symlink without deleting anything.&lt;/p&gt;
+&lt;p&gt;Enable a site:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ln -s /etc/nginx/sites-available/mysite /etc/nginx/sites-enabled/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Disable a site:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo rm /etc/nginx/sites-enabled/mysite
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="basic-site-configuration"&gt;Basic Site Configuration
+&lt;/h2&gt;&lt;p&gt;Create a file in &lt;code&gt;sites-available&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/nginx/sites-available/mysite
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Minimal config to serve a static site:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-nginx" data-lang="nginx"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;server&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;listen&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;80&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;server_name&lt;/span&gt; &lt;span style="color:#e6db74"&gt;mysite.com&lt;/span&gt; &lt;span style="color:#e6db74"&gt;www.mysite.com&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;root&lt;/span&gt; &lt;span style="color:#e6db74"&gt;/var/www/mysite&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;index&lt;/span&gt; &lt;span style="color:#e6db74"&gt;index.html&lt;/span&gt; &lt;span style="color:#e6db74"&gt;index.htm&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;location&lt;/span&gt; &lt;span style="color:#e6db74"&gt;/&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;try_files&lt;/span&gt; $uri $uri/ =&lt;span style="color:#ae81ff"&gt;404&lt;/span&gt;;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; }
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;After any change — always test before applying:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nginx -t
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If it shows &lt;code&gt;syntax is ok&lt;/code&gt; and &lt;code&gt;test is successful&lt;/code&gt;, reload without interrupting the service:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl reload nginx
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="correct-file-permissions"&gt;Correct File Permissions
+&lt;/h2&gt;&lt;p&gt;nginx runs as the &lt;code&gt;www-data&lt;/code&gt; user. Site files need to be readable by that user:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chown -R www-data:www-data /var/www/mysite
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo find /var/www/mysite -type f -exec chmod &lt;span style="color:#ae81ff"&gt;644&lt;/span&gt; &lt;span style="color:#f92672"&gt;{}&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;\;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo find /var/www/mysite -type d -exec chmod &lt;span style="color:#ae81ff"&gt;755&lt;/span&gt; &lt;span style="color:#f92672"&gt;{}&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;\;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Simple rule:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Files: &lt;code&gt;644&lt;/code&gt; — nginx reads, nobody writes without permission&lt;/li&gt;
+&lt;li&gt;Directories: &lt;code&gt;755&lt;/code&gt; — nginx enters, nobody writes without permission&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="the-two-logs-you-need-to-know"&gt;The Two Logs You Need to Know
+&lt;/h2&gt;&lt;p&gt;They are different and serve different purposes:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;access.log&lt;/strong&gt; — records all HTTP requests:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;192.168.1.1 - - [18/Mar/2026:20:27:32] &amp;#34;GET / HTTP/1.1&amp;#34; 200 615
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is where you see response codes: 200, 301, 403, 404, 500.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;error.log&lt;/strong&gt; — records internal nginx errors:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;2026/03/18 20:48:45 [error] 1651#0: open() &amp;#34;/var/www/html/favicon.ico&amp;#34; failed
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Monitor in real time:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;tail -f /var/log/nginx/access.log
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;tail -f /var/log/nginx/error.log
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="troubleshooting--most-common-errors"&gt;Troubleshooting — Most Common Errors
+&lt;/h2&gt;&lt;h3 id="site-not-loading--where-to-start"&gt;Site not loading — where to start
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# 1. Is nginx running?&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl status nginx
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# 2. Does it respond locally?&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;curl -I localhost
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# 3. Check both logs&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;tail -50 /var/log/nginx/access.log
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;tail -50 /var/log/nginx/error.log
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="403-forbidden"&gt;403 Forbidden
+&lt;/h3&gt;&lt;p&gt;403 can have several causes — check in this order:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# File and directory permissions&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ls -la /var/www/html/
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ls -la /var/www/
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Active site configuration&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;cat /etc/nginx/sites-enabled/default | grep -E &lt;span style="color:#e6db74"&gt;&amp;#34;root|index&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Is the symlink there?&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ls -la /etc/nginx/sites-enabled/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Important: if the client reports a 403 but the &lt;code&gt;access.log&lt;/code&gt; shows nothing, the problem is not on the server — it may be browser cache (&lt;code&gt;Ctrl+Shift+R&lt;/code&gt;) or the client hitting the wrong URL.&lt;/p&gt;
+&lt;h3 id="502-bad-gateway"&gt;502 Bad Gateway
+&lt;/h3&gt;&lt;p&gt;Happens when nginx cannot communicate with the backend (PHP-FPM, Node.js, etc):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Check if the backend is running&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl status php8.1-fpm
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# nginx error log&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;tail -50 /var/log/nginx/error.log
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="nginx-wont-start--port-already-in-use"&gt;nginx won&amp;rsquo;t start — port already in use
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# See what is on port 80&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ss -tlnp | grep :80
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Check configuration&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nginx -t
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="config-change-has-no-effect"&gt;Config change has no effect
+&lt;/h3&gt;&lt;p&gt;Common mistake: editing the file in &lt;code&gt;sites-available&lt;/code&gt; but forgetting to reload:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nginx -t &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo systemctl reload nginx
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="quick-reference"&gt;Quick Reference
+&lt;/h2&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl start nginx &lt;span style="color:#75715e"&gt;# start&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl stop nginx &lt;span style="color:#75715e"&gt;# stop&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl restart nginx &lt;span style="color:#75715e"&gt;# restart (drops active connections)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl reload nginx &lt;span style="color:#75715e"&gt;# reload config (no interruption)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl status nginx &lt;span style="color:#75715e"&gt;# current status&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nginx -t &lt;span style="color:#75715e"&gt;# test configuration&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;p&gt;I have been running nginx in production on Debian and Ubuntu servers for several years. If you have questions or ran into a different error, leave a comment below.&lt;/p&gt;</description></item></channel></rss>
