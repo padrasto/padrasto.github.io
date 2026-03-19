@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
-        <title>Sysadmin on Padrasto&#39;s Linux Lab</title>
-        <link>http://localhost:1313/tags/sysadmin/</link>
-        <description>Recent content in Sysadmin on Padrasto&#39;s Linux Lab</description>
+        <title>Nginx on Padrasto&#39;s Linux Lab</title>
+        <link>http://localhost:1313/categories/nginx/</link>
+        <description>Recent content in Nginx on Padrasto&#39;s Linux Lab</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Wed, 18 Mar 2026 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/sysadmin/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 18 Mar 2026 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/categories/nginx/index.xml" rel="self" type="application/rss+xml" /><item>
             <title>nginx on Ubuntu — Complete Setup and Troubleshooting Guide</title>
             <link>http://localhost:1313/post/nginx-on-ubuntu-setup-and-troubleshooting/</link>
             <pubDate>Wed, 18 Mar 2026 00:00:00 +0000</pubDate>

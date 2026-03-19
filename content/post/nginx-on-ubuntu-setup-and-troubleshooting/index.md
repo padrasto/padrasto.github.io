@@ -2,10 +2,13 @@
 title: "nginx on Ubuntu — Complete Setup and Troubleshooting Guide"
 date: 2026-03-18
 tags: [linux, nginx, ubuntu, sysadmin, server]
-image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop"
+categories: [Ubuntu, nginx]
+
+pin: false"
 ---
 
 If you have ever received a call at 3 AM because a client's site went down, you know there is no time to search through documentation. This is the guide I use in my day-to-day work — installation, configuration and the most common nginx problems on Ubuntu.
+![nginx server](https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop)
 
 ## Installation
 
@@ -208,4 +211,3 @@ sudo nginx -t                   # test configuration
 
 ---
 
-I have been running nginx in production on Debian and Ubuntu servers for several years. If you have questions or ran into a different error, leave a comment below.
