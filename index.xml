@@ -1,4 +1,100 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Padrasto's Linux Lab</title><link>https://padrasto.github.io/</link><description>Recent content on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Wed, 18 Mar 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>nginx on Ubuntu — Complete Setup and Troubleshooting Guide</title><link>https://padrasto.github.io/post/nginx-on-ubuntu-setup-and-troubleshooting/</link><pubDate>Wed, 18 Mar 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/nginx-on-ubuntu-setup-and-troubleshooting/</guid><description>&lt;p&gt;If you have ever received a call at 3 AM because a client&amp;rsquo;s site went down, you know there is no time to search through documentation. This is the guide I use in my day-to-day work — installation, configuration and the most common nginx problems on Ubuntu.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Padrasto's Linux Lab</title><link>https://padrasto.github.io/</link><description>Recent content on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Thu, 19 Mar 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>Disk Monitoring on Linux — Bash Script and Automation</title><link>https://padrasto.github.io/post/disk-monitoring-bash/</link><pubDate>Thu, 19 Mar 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/disk-monitoring-bash/</guid><description>&lt;p&gt;As a support engineer, disk space issues are one of the most common — and most avoidable — problems you will deal with. A full disk can bring down a web server, corrupt a database, or fill up logs until nothing works. The fix is simple: monitor before it happens.
+&lt;img alt="nginx server" class="gallery-image" data-flex-basis="451px" data-flex-grow="188" height="638" loading="lazy" sizes="(max-width: 767px) calc(100vw - 30px), (max-width: 1023px) 700px, (max-width: 1279px) 950px, 1232px" src="https://images.unsplash.com/photo-1602469011629-37c6414c006a?w=1200&amp;auto=format&amp;fit=crop" srcset="https://padrasto.github.io/photo-1602469011629-37c6414c006a_13824124647687681641_hu_a814de81ba8567f1.jpg 800w, https://images.unsplash.com/photo-1602469011629-37c6414c006a?w=1200&amp;auto=format&amp;fit=crop 1200w" width="1200"&gt;&lt;/p&gt;
+&lt;p&gt;In this article I will show you how to build a disk monitoring script from scratch, explain every line, and automate it with cron so it runs without you thinking about it.&lt;/p&gt;
+&lt;h2 id="why-df--p"&gt;Why df -P?
+&lt;/h2&gt;&lt;p&gt;The starting point is &lt;code&gt;df&lt;/code&gt;, the standard tool for checking disk usage. But raw &lt;code&gt;df&lt;/code&gt; output can vary between systems — column widths shift, line breaks appear differently. The &lt;code&gt;-P&lt;/code&gt; flag forces POSIX output format, which is consistent and safe to parse in scripts.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;df -P
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Output example:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Filesystem 1024-blocks Used Available Capacity Mounted on
+/dev/sda1 20511312 8342816 11118412 43% /
+tmpfs 4096 0 4096 0% /dev/shm
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id="the-script"&gt;The Script
+&lt;/h2&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;#!/bin/bash
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;LIMIT&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#ae81ff"&gt;80&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;alert&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;while&lt;/span&gt; read -r filesystem size used avail percent mountpoint
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;do&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; usage&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;${&lt;/span&gt;percent%&lt;span style="color:#ae81ff"&gt;\%&lt;/span&gt;&lt;span style="color:#e6db74"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; &lt;span style="color:#f92672"&gt;[&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$usage&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; -ge &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$LIMIT&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; &lt;span style="color:#f92672"&gt;]&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;WARNING: &lt;/span&gt;$filesystem&lt;span style="color:#e6db74"&gt; is at &lt;/span&gt;&lt;span style="color:#e6db74"&gt;${&lt;/span&gt;usage&lt;span style="color:#e6db74"&gt;}&lt;/span&gt;&lt;span style="color:#e6db74"&gt;% (limit: &lt;/span&gt;&lt;span style="color:#e6db74"&gt;${&lt;/span&gt;LIMIT&lt;span style="color:#e6db74"&gt;}&lt;/span&gt;&lt;span style="color:#e6db74"&gt;%)&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; alert&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;done&lt;/span&gt; &amp;lt; &amp;lt;&lt;span style="color:#f92672"&gt;(&lt;/span&gt;df -P | tail -n +2&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;if&lt;/span&gt; &lt;span style="color:#f92672"&gt;[&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;$alert&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; -eq &lt;span style="color:#ae81ff"&gt;0&lt;/span&gt; &lt;span style="color:#f92672"&gt;]&lt;/span&gt;; &lt;span style="color:#66d9ef"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; echo &lt;span style="color:#e6db74"&gt;&amp;#34;All OK. No partition above &lt;/span&gt;&lt;span style="color:#e6db74"&gt;${&lt;/span&gt;LIMIT&lt;span style="color:#e6db74"&gt;}&lt;/span&gt;&lt;span style="color:#e6db74"&gt;%.&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Save it as &lt;code&gt;/usr/local/bin/check-disk.sh&lt;/code&gt; and make it executable:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod +x /usr/local/bin/check-disk.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="breaking-it-down"&gt;Breaking It Down
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;&lt;code&gt;LIMIT=80&lt;/code&gt;&lt;/strong&gt; — The threshold percentage. Any filesystem at or above this value triggers a warning. Adjust to your needs — production servers often use 85 or 90.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;while read -r filesystem size used avail percent mountpoint&lt;/code&gt;&lt;/strong&gt; — This reads the &lt;code&gt;df -P&lt;/code&gt; output line by line, assigning each column to a named variable. The &lt;code&gt;-r&lt;/code&gt; flag prevents backslash interpretation, which keeps the data clean.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;done &amp;lt; &amp;lt;(df -P | tail -n +2)&lt;/code&gt;&lt;/strong&gt; — The &lt;code&gt;&amp;lt; &amp;lt;(...)&lt;/code&gt; is process substitution. It feeds the output of &lt;code&gt;df -P | tail -n +2&lt;/code&gt; into the while loop as if it were a file. The &lt;code&gt;tail -n +2&lt;/code&gt; skips the header line so we only process actual filesystem data.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;usage=${percent%\%}&lt;/code&gt;&lt;/strong&gt; — This is parameter expansion. The &lt;code&gt;%\%&lt;/code&gt; strips the trailing &lt;code&gt;%&lt;/code&gt; character from the value (for example, &lt;code&gt;43%&lt;/code&gt; becomes &lt;code&gt;43&lt;/code&gt;). This is necessary because bash cannot compare strings like &lt;code&gt;43%&lt;/code&gt; numerically.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;[ &amp;quot;$usage&amp;quot; -ge &amp;quot;$LIMIT&amp;quot; ]&lt;/code&gt;&lt;/strong&gt; — Numeric comparison in bash. &lt;code&gt;-ge&lt;/code&gt; means &amp;ldquo;greater than or equal to&amp;rdquo;. Always quote variables in conditionals to avoid errors when values are empty.&lt;/p&gt;
+&lt;h2 id="testing-it"&gt;Testing It
+&lt;/h2&gt;&lt;p&gt;Run it manually first:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;bash /usr/local/bin/check-disk.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Expected output when everything is fine:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;All OK. No partition above 80%.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To test the alert without filling up your disk, temporarily lower the threshold:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;LIMIT&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#ae81ff"&gt;5&lt;/span&gt; bash /usr/local/bin/check-disk.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You should see warnings for most partitions.&lt;/p&gt;
+&lt;h2 id="automating-with-cron"&gt;Automating with Cron
+&lt;/h2&gt;&lt;p&gt;Once the script works, automate it. Open the crontab:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;crontab -e
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run every day at 8am and log the output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#ae81ff"&gt;0&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;8&lt;/span&gt; * * * /usr/local/bin/check-disk.sh &amp;gt;&amp;gt; /var/log/disk-monitor.log 2&amp;gt;&amp;amp;&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or run every 6 hours for more frequent checks:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#ae81ff"&gt;0&lt;/span&gt; */6 * * * /usr/local/bin/check-disk.sh &amp;gt;&amp;gt; /var/log/disk-monitor.log 2&amp;gt;&amp;amp;&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="going-further"&gt;Going Further
+&lt;/h2&gt;&lt;p&gt;This script covers the basics well. From here you can extend it to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Send email alerts&lt;/strong&gt; using &lt;code&gt;mail&lt;/code&gt; or &lt;code&gt;sendmail&lt;/code&gt; when a threshold is crossed&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Integrate with monitoring tools&lt;/strong&gt; like Nagios, Zabbix, or Prometheus node exporter&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Log with timestamps&lt;/strong&gt; by replacing &lt;code&gt;echo&lt;/code&gt; with &lt;code&gt;echo &amp;quot;$(date '+%Y-%m-%d %H:%M:%S') - ...&amp;quot;&lt;/code&gt; for easier debugging&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The core pattern — parse &lt;code&gt;df -P&lt;/code&gt;, strip the &lt;code&gt;%&lt;/code&gt;, compare numerically — stays the same regardless of how complex you make the alerting.&lt;/p&gt;
+&lt;h2 id="quick-reference"&gt;Quick Reference
+&lt;/h2&gt;&lt;table&gt;
+ &lt;thead&gt;
+ &lt;tr&gt;
+ &lt;th&gt;Command&lt;/th&gt;
+ &lt;th&gt;Purpose&lt;/th&gt;
+ &lt;/tr&gt;
+ &lt;/thead&gt;
+ &lt;tbody&gt;
+ &lt;tr&gt;
+ &lt;td&gt;&lt;code&gt;df -P&lt;/code&gt;&lt;/td&gt;
+ &lt;td&gt;Disk usage in POSIX format&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;&lt;code&gt;tail -n +2&lt;/code&gt;&lt;/td&gt;
+ &lt;td&gt;Skip header line&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;&lt;code&gt;${var%\%}&lt;/code&gt;&lt;/td&gt;
+ &lt;td&gt;Strip trailing &lt;code&gt;%&lt;/code&gt; character&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;&lt;code&gt;while read -r&lt;/code&gt;&lt;/td&gt;
+ &lt;td&gt;Read output line by line&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;&lt;code&gt;[ -ge ]&lt;/code&gt;&lt;/td&gt;
+ &lt;td&gt;Numeric comparison (greater or equal)&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;&lt;code&gt;&amp;lt; &amp;lt;(...)&lt;/code&gt;&lt;/td&gt;
+ &lt;td&gt;Process substitution&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;&lt;code&gt;crontab -e&lt;/code&gt;&lt;/td&gt;
+ &lt;td&gt;Edit cron jobs for current user&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;/tbody&gt;
+&lt;/table&gt;</description></item><item><title>nginx on Ubuntu — Complete Setup and Troubleshooting Guide</title><link>https://padrasto.github.io/post/nginx-on-ubuntu-setup-and-troubleshooting/</link><pubDate>Wed, 18 Mar 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/nginx-on-ubuntu-setup-and-troubleshooting/</guid><description>&lt;p&gt;If you have ever received a call at 3 AM because a client&amp;rsquo;s site went down, you know there is no time to search through documentation. This is the guide I use in my day-to-day work — installation, configuration and the most common nginx problems on Ubuntu.
 &lt;img alt="nginx server" class="gallery-image" data-flex-basis="427px" data-flex-grow="178" height="673" loading="lazy" sizes="(max-width: 767px) calc(100vw - 30px), (max-width: 1023px) 700px, (max-width: 1279px) 950px, 1232px" src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&amp;auto=format&amp;fit=crop" srcset="https://padrasto.github.io/photo-1558494949-ef010cbdcc31_5162488056487092837_hu_acd7a801859efea7.jpg 800w, https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&amp;auto=format&amp;fit=crop 1200w" width="1200"&gt;&lt;/p&gt;
 &lt;h2 id="installation"&gt;Installation
 &lt;/h2&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt update
