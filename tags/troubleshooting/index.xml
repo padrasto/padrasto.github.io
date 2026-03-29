@@ -122,4 +122,210 @@
 &lt;/table&gt;
 &lt;h2 id="summary"&gt;Summary
 &lt;/h2&gt;&lt;p&gt;Most broken cronjobs fail for one of a small set of reasons: the daemon is not running, the path is wrong, the script lacks execute permission, or output is being silently discarded. Start with the logs — &lt;code&gt;journalctl -u cron&lt;/code&gt; tells you immediately whether the job was triggered at all, which cuts the problem space in half.&lt;/p&gt;
-&lt;p&gt;Once you have that information, the fix is usually straightforward.&lt;/p&gt;</description></item></channel></rss>
+&lt;p&gt;Once you have that information, the fix is usually straightforward.&lt;/p&gt;</description></item><item><title>Linux User and Permissions Management: A Practical Guide</title><link>https://padrasto.github.io/post/user-and-permissions-management/</link><pubDate>Sun, 29 Mar 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/user-and-permissions-management/</guid><description>&lt;p&gt;User and permissions management is one of the most fundamental skills in Linux system administration. Get it wrong and you either lock legitimate users out or open doors that should stay closed. This article covers the essential commands and concepts you will use on a daily basis as a sysadmin.&lt;/p&gt;
+&lt;h2 id="users-and-groups-the-basics"&gt;Users and Groups: The Basics
+&lt;/h2&gt;&lt;p&gt;Every file and process on Linux is owned by a user and a group. Permissions are then defined for three categories:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;owner&lt;/strong&gt; — the user who owns the file&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;group&lt;/strong&gt; — users belonging to the file&amp;rsquo;s group&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;others&lt;/strong&gt; — everyone else&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;You can see this with &lt;code&gt;ls -l&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ls -l /etc/nginx/nginx.conf
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;-rw-r--r-- &lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; root root &lt;span style="color:#ae81ff"&gt;1447&lt;/span&gt; Mar &lt;span style="color:#ae81ff"&gt;10&lt;/span&gt; 12:00 /etc/nginx/nginx.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Reading left to right: file type and permissions (&lt;code&gt;-rw-r--r--&lt;/code&gt;), link count, owner (&lt;code&gt;root&lt;/code&gt;), group (&lt;code&gt;root&lt;/code&gt;), size, date, filename.&lt;/p&gt;
+&lt;p&gt;The permission string breaks down as:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;- rw- r-- r--
+│ │ │ └── others: read only
+│ │ └────── group: read only
+│ └────────── owner: read and write
+└──────────── file type (- = file, d = directory, l = symlink)
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id="managing-users"&gt;Managing Users
+&lt;/h2&gt;&lt;h3 id="create-a-user"&gt;Create a user
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo useradd -m -s /bin/bash username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;-m&lt;/code&gt; creates the home directory&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-s /bin/bash&lt;/code&gt; sets the default shell&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Set the password immediately after:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo passwd username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="delete-a-user"&gt;Delete a user
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo userdel username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To also remove the home directory:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo userdel -r username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="modify-a-user"&gt;Modify a user
+&lt;/h3&gt;&lt;p&gt;Change the default shell:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo usermod -s /bin/bash username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Lock an account (disables login without deleting):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo usermod -L username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Unlock it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo usermod -U username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="view-user-information"&gt;View user information
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;id username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Output:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;uid=1001(username) gid=1001(username) groups=1001(username),27(sudo)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This shows the user&amp;rsquo;s UID, primary group GID, and all supplementary groups.&lt;/p&gt;
+&lt;h2 id="managing-groups"&gt;Managing Groups
+&lt;/h2&gt;&lt;h3 id="create-a-group"&gt;Create a group
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo groupadd groupname
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="add-a-user-to-a-group"&gt;Add a user to a group
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo usermod -aG groupname username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;-a&lt;/code&gt; flag is critical — without it, &lt;code&gt;usermod -G&lt;/code&gt; &lt;strong&gt;replaces&lt;/strong&gt; the user&amp;rsquo;s group list instead of appending. This is a common mistake that can strip sudo access.&lt;/p&gt;
+&lt;p&gt;The change takes effect on the user&amp;rsquo;s next login. To apply it in the current session:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;newgrp groupname
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="remove-a-user-from-a-group"&gt;Remove a user from a group
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo gpasswd -d username groupname
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="list-all-groups-a-user-belongs-to"&gt;List all groups a user belongs to
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;groups username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="file-permissions-with-chmod"&gt;File Permissions with chmod
+&lt;/h2&gt;&lt;h3 id="symbolic-mode"&gt;Symbolic mode
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod u+x script.sh &lt;span style="color:#75715e"&gt;# add execute for owner&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod g-w file.txt &lt;span style="color:#75715e"&gt;# remove write for group&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod o+r file.txt &lt;span style="color:#75715e"&gt;# add read for others&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod a+x script.sh &lt;span style="color:#75715e"&gt;# add execute for all (owner, group, others)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Letters: &lt;code&gt;u&lt;/code&gt; = owner, &lt;code&gt;g&lt;/code&gt; = group, &lt;code&gt;o&lt;/code&gt; = others, &lt;code&gt;a&lt;/code&gt; = all.
+Operators: &lt;code&gt;+&lt;/code&gt; = add, &lt;code&gt;-&lt;/code&gt; = remove, &lt;code&gt;=&lt;/code&gt; = set exactly.&lt;/p&gt;
+&lt;h3 id="numeric-octal-mode"&gt;Numeric (octal) mode
+&lt;/h3&gt;&lt;p&gt;Each permission has a numeric value: read = 4, write = 2, execute = 1. Add them together for each category.&lt;/p&gt;
+&lt;table&gt;
+ &lt;thead&gt;
+ &lt;tr&gt;
+ &lt;th&gt;Octal&lt;/th&gt;
+ &lt;th&gt;Permissions&lt;/th&gt;
+ &lt;/tr&gt;
+ &lt;/thead&gt;
+ &lt;tbody&gt;
+ &lt;tr&gt;
+ &lt;td&gt;7&lt;/td&gt;
+ &lt;td&gt;rwx&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;6&lt;/td&gt;
+ &lt;td&gt;rw-&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;5&lt;/td&gt;
+ &lt;td&gt;r-x&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;4&lt;/td&gt;
+ &lt;td&gt;r&amp;ndash;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;0&lt;/td&gt;
+ &lt;td&gt;&amp;mdash;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Common examples:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod &lt;span style="color:#ae81ff"&gt;644&lt;/span&gt; file.txt &lt;span style="color:#75715e"&gt;# owner rw, group r, others r (typical for files)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod &lt;span style="color:#ae81ff"&gt;755&lt;/span&gt; script.sh &lt;span style="color:#75715e"&gt;# owner rwx, group rx, others rx (typical for scripts)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod &lt;span style="color:#ae81ff"&gt;700&lt;/span&gt; ~/.ssh &lt;span style="color:#75715e"&gt;# owner rwx only (required for SSH)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod &lt;span style="color:#ae81ff"&gt;600&lt;/span&gt; ~/.ssh/id_rsa &lt;span style="color:#75715e"&gt;# owner rw only (required for SSH private keys)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="recursive-chmod"&gt;Recursive chmod
+&lt;/h3&gt;&lt;p&gt;Apply permissions to a directory and everything inside it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod -R &lt;span style="color:#ae81ff"&gt;755&lt;/span&gt; /var/www/html
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Be careful with &lt;code&gt;-R&lt;/code&gt; — applying execute to all files in a directory is rarely what you want. A common pattern is to set directories and files separately:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;find /var/www/html -type d -exec chmod &lt;span style="color:#ae81ff"&gt;755&lt;/span&gt; &lt;span style="color:#f92672"&gt;{}&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;\;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;find /var/www/html -type f -exec chmod &lt;span style="color:#ae81ff"&gt;644&lt;/span&gt; &lt;span style="color:#f92672"&gt;{}&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;\;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="changing-ownership-with-chown"&gt;Changing Ownership with chown
+&lt;/h2&gt;&lt;h3 id="change-the-owner"&gt;Change the owner
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chown username file.txt
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="change-the-owner-and-group"&gt;Change the owner and group
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chown username:groupname file.txt
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="change-only-the-group"&gt;Change only the group
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chown :groupname file.txt
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# or&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chgrp groupname file.txt
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="recursive-chown"&gt;Recursive chown
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chown -R username:groupname /var/www/mysite
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="sudo-granting-elevated-privileges"&gt;sudo: Granting Elevated Privileges
+&lt;/h2&gt;&lt;h3 id="add-a-user-to-the-sudo-group"&gt;Add a user to the sudo group
+&lt;/h3&gt;&lt;p&gt;On Debian/Ubuntu:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo usermod -aG sudo username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;On Red Hat/CentOS:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo usermod -aG wheel username
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="edit-the-sudoers-file-safely"&gt;Edit the sudoers file safely
+&lt;/h3&gt;&lt;p&gt;Never edit &lt;code&gt;/etc/sudoers&lt;/code&gt; directly. Always use:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo visudo
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This validates the syntax before saving, preventing a broken sudoers file that could lock you out entirely.&lt;/p&gt;
+&lt;p&gt;To allow a user to run a specific command without a password:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;username ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id="special-permissions"&gt;Special Permissions
+&lt;/h2&gt;&lt;h3 id="setuid-suid"&gt;setuid (SUID)
+&lt;/h3&gt;&lt;p&gt;When set on an executable, it runs as the file&amp;rsquo;s owner instead of the user who launched it. Classic example: &lt;code&gt;/usr/bin/passwd&lt;/code&gt; runs as root so unprivileged users can change their own password.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod u+s /path/to/binary
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# or&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod &lt;span style="color:#ae81ff"&gt;4755&lt;/span&gt; /path/to/binary
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Visible as &lt;code&gt;s&lt;/code&gt; in the owner execute position: &lt;code&gt;-rwsr-xr-x&lt;/code&gt;&lt;/p&gt;
+&lt;h3 id="setgid-sgid"&gt;setgid (SGID)
+&lt;/h3&gt;&lt;p&gt;On a directory, new files created inside inherit the directory&amp;rsquo;s group rather than the creator&amp;rsquo;s primary group. Useful for shared project directories.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod g+s /shared/project
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# or&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod &lt;span style="color:#ae81ff"&gt;2755&lt;/span&gt; /shared/project
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="sticky-bit"&gt;Sticky bit
+&lt;/h3&gt;&lt;p&gt;On a directory, only the file&amp;rsquo;s owner (or root) can delete it, even if others have write permission. Standard on &lt;code&gt;/tmp&lt;/code&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod +t /shared/uploads
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# or&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod &lt;span style="color:#ae81ff"&gt;1777&lt;/span&gt; /shared/uploads
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Visible as &lt;code&gt;t&lt;/code&gt; in the others execute position: &lt;code&gt;drwxrwxrwt&lt;/code&gt;&lt;/p&gt;
+&lt;h2 id="diagnosing-permission-problems"&gt;Diagnosing Permission Problems
+&lt;/h2&gt;&lt;p&gt;When a command fails with &lt;code&gt;Permission denied&lt;/code&gt;, work through this checklist:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;1. Check what user you are running as:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;whoami
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;id
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;2. Check the file permissions:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ls -l /path/to/file
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ls -ld /path/to/directory
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Note: to access a file, you need execute permission on every directory in the path, not just the file itself.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;3. Check group membership:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;groups
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If you just added yourself to a group, log out and back in (or use &lt;code&gt;newgrp&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;4. Test with sudo to isolate the issue:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo command
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If it works as root but not as the user, the problem is permissions. If it fails as root too, the problem is elsewhere.&lt;/p&gt;
+&lt;h2 id="quick-reference"&gt;Quick Reference
+&lt;/h2&gt;&lt;table&gt;
+ &lt;thead&gt;
+ &lt;tr&gt;
+ &lt;th&gt;Task&lt;/th&gt;
+ &lt;th&gt;Command&lt;/th&gt;
+ &lt;/tr&gt;
+ &lt;/thead&gt;
+ &lt;tbody&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Create user&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;sudo useradd -m -s /bin/bash user&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Set password&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;sudo passwd user&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Add to group&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;sudo usermod -aG group user&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Check user info&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;id user&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Check file permissions&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;ls -l file&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Change permissions&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;chmod 644 file&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Change owner&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;sudo chown user:group file&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Edit sudoers&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;sudo visudo&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id="summary"&gt;Summary
+&lt;/h2&gt;&lt;p&gt;User and permissions management comes down to three questions: who owns this file, what are the permission bits, and what groups is the user in? When something fails with a permission error, &lt;code&gt;ls -l&lt;/code&gt;, &lt;code&gt;id&lt;/code&gt;, and &lt;code&gt;groups&lt;/code&gt; will answer all three in seconds. From there, &lt;code&gt;chmod&lt;/code&gt;, &lt;code&gt;chown&lt;/code&gt;, and &lt;code&gt;usermod&lt;/code&gt; fix the vast majority of problems you will encounter.&lt;/p&gt;</description></item></channel></rss>
