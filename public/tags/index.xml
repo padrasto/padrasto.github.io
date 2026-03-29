@@ -18,6 +18,12 @@
             <guid>http://localhost:1313/tags/linux/</guid>
             <description></description>
         </item><item>
+            <title>Permissions</title>
+            <link>http://localhost:1313/tags/permissions/</link>
+            <pubDate>Sun, 29 Mar 2026 00:00:00 +0000</pubDate>
+            <guid>http://localhost:1313/tags/permissions/</guid>
+            <description></description>
+        </item><item>
             <title>Sysadmin</title>
             <link>http://localhost:1313/tags/sysadmin/</link>
             <pubDate>Sun, 29 Mar 2026 00:00:00 +0000</pubDate>
@@ -28,6 +34,12 @@
             <link>http://localhost:1313/tags/troubleshooting/</link>
             <pubDate>Sun, 29 Mar 2026 00:00:00 +0000</pubDate>
             <guid>http://localhost:1313/tags/troubleshooting/</guid>
+            <description></description>
+        </item><item>
+            <title>Users</title>
+            <link>http://localhost:1313/tags/users/</link>
+            <pubDate>Sun, 29 Mar 2026 00:00:00 +0000</pubDate>
+            <guid>http://localhost:1313/tags/users/</guid>
             <description></description>
         </item><item>
             <title>Automation</title>
