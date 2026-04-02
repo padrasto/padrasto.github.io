@@ -2,9 +2,16 @@
 title: "Diagnosing Failing Services with systemd and journalctl"
 date: 2026-03-30
 draft: false
-tags: ["linux", "systemd", "journalctl", "troubleshooting", "sysadmin"]
-categories: ["Linux , journalctl"]
 description: "How to read what systemd and journalctl are telling you, so you can fix the root cause instead of the symptom."
+categories:
+    - Linux
+    - Sysadmin
+tags:
+    - linux
+    - systemd
+    - journalctl
+    - troubleshooting
+    - sysadmin
 ---
 
 When a service fails on a Linux system, the instinct is often to restart it and move on.

@@ -18,10 +18,10 @@
             <guid>http://localhost:1313/categories/self-hosting/</guid>
             <description></description>
         </item><item>
-            <title>Linux , Journalctl</title>
-            <link>http://localhost:1313/categories/linux--journalctl/</link>
+            <title>Sysadmin</title>
+            <link>http://localhost:1313/categories/sysadmin/</link>
             <pubDate>Mon, 30 Mar 2026 00:00:00 +0000</pubDate>
-            <guid>http://localhost:1313/categories/linux--journalctl/</guid>
+            <guid>http://localhost:1313/categories/sysadmin/</guid>
             <description></description>
         </item><item>
             <title>Troubleshooting</title>
