@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Tlp on Padrasto's Linux Lab</title><link>https://padrasto.github.io/tags/tlp/</link><description>Recent content in Tlp on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Thu, 02 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/tags/tlp/index.xml" rel="self" type="application/rss+xml"/><item><title>ThinkPad T480 as a Home Server with CasaOS</title><link>https://padrasto.github.io/post/thinkpad-home-server/</link><pubDate>Thu, 02 Apr 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/thinkpad-home-server/</guid><description>&lt;p&gt;I had a ThinkPad T480 collecting dust. Instead of leaving it that way, I turned it into a home server running &lt;strong&gt;CasaOS&lt;/strong&gt; — a clean web dashboard for managing self-hosted apps in containers. The goal: &lt;strong&gt;Jellyfin&lt;/strong&gt; for media streaming and &lt;strong&gt;Immich&lt;/strong&gt; for photo backup, fully self-hosted and under my control.&lt;/p&gt;
+&lt;p&gt;Along the way I also dealt with three problems that come up whenever you use a laptop as a server: protecting the battery, keeping the machine running with the lid closed, and blanking the screen automatically so it doesn&amp;rsquo;t wear out.&lt;/p&gt;
+&lt;p&gt;Here&amp;rsquo;s the full guide, step by step.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id="step-01--install-casaos"&gt;Step 01 — Install CasaOS
+&lt;/h2&gt;&lt;p&gt;CasaOS is an open-source home cloud system that runs on top of Debian (or Ubuntu) and provides a clean web panel for installing and managing containerised apps. Installation is a single command:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;curl -fsSL https://get.casaos.io | sudo bash
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;After installation, the dashboard is available in your browser at the server&amp;rsquo;s local IP:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;http://&amp;lt;laptop-ip&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;From there, install &lt;strong&gt;Jellyfin&lt;/strong&gt; and &lt;strong&gt;Immich&lt;/strong&gt; directly from CasaOS&amp;rsquo;s built-in App Store — no manual Docker work needed.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id="step-02--static-ip"&gt;Step 02 — Static IP
+&lt;/h2&gt;&lt;p&gt;For the server&amp;rsquo;s address to never change (so you don&amp;rsquo;t lose access to the panel), you need a static IP. First, find your network interface name:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ip link show
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You&amp;rsquo;ll see something like &lt;code&gt;eth0&lt;/code&gt;, &lt;code&gt;enp0s25&lt;/code&gt;, or &lt;code&gt;eno1&lt;/code&gt;. Then edit the interfaces file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/network/interfaces
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;# replace enp0s25 with your actual interface name
+auto enp0s25
+iface enp0s25 inet static
+ address 192.168.1.100
+ netmask 255.255.255.0
+ gateway 192.168.1.1
+ dns-nameservers 1.1.1.1 8.8.8.8
+&lt;/code&gt;&lt;/pre&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl restart networking
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;Alternative — via NetworkManager:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# find the connection name&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmcli connection show
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# apply the static IP&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmcli connection modify &lt;span style="color:#e6db74"&gt;&amp;#34;Connection-Name&amp;#34;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ipv4.method manual &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ipv4.addresses 192.168.1.100/24 &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ipv4.gateway 192.168.1.1 &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ipv4.dns &lt;span style="color:#e6db74"&gt;&amp;#34;1.1.1.1 8.8.8.8&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmcli connection up &lt;span style="color:#e6db74"&gt;&amp;#34;Connection-Name&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+ &lt;blockquote&gt;
+ &lt;p&gt;&lt;strong&gt;Tip:&lt;/strong&gt; Before choosing an IP, check your router&amp;rsquo;s DHCP range and pick an address &lt;em&gt;outside&lt;/em&gt; that range to avoid conflicts. Alternatively, reserve the IP in the router itself using the ThinkPad&amp;rsquo;s MAC address.&lt;/p&gt;
+
+ &lt;/blockquote&gt;
+&lt;hr&gt;
+&lt;h2 id="step-03--battery-protection-2080"&gt;Step 03 — Battery Protection (20–80%)
+&lt;/h2&gt;&lt;p&gt;The T480 has two batteries (BAT0 internal, BAT1 external). Charging constantly to 100% degrades the cells over time. &lt;strong&gt;TLP&lt;/strong&gt; lets you set charge thresholds directly in the Lenovo hardware:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install tlp tlp-rdw -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Edit &lt;code&gt;/etc/tlp.conf&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Internal battery&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;START_CHARGE_THRESH_BAT0&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;20&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;STOP_CHARGE_THRESH_BAT0&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;80&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# External battery&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;START_CHARGE_THRESH_BAT1&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;20&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;STOP_CHARGE_THRESH_BAT1&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;80&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl enable tlp
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl start tlp
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo tlp start
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# verify it applied correctly&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo tlp-stat -b
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;h2 id="step-04--lid-closed-without-suspending"&gt;Step 04 — Lid Closed Without Suspending
+&lt;/h2&gt;&lt;p&gt;By default, Debian suspends or hibernates when the lid is closed. On a server, that&amp;rsquo;s the last thing you want. Configure it in &lt;code&gt;logind.conf&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/systemd/logind.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;HandleLidSwitch&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;ignore&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;HandleLidSwitchExternalPower&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;ignore&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;HandleLidSwitchDocked&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;ignore&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl restart systemd-logind
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;h2 id="step-05--auto-screen-blank"&gt;Step 05 — Auto Screen Blank
+&lt;/h2&gt;&lt;p&gt;Leaving the screen on 24/7 wears out the panel. On a headless server (no desktop environment), the simplest approach is setting &lt;code&gt;consoleblank&lt;/code&gt; directly in GRUB:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/default/grub
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# 180 = 3 minutes | 300 = 5 minutes&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;GRUB_CMDLINE_LINUX_DEFAULT&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;quiet consoleblank=300&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo update-grub
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If you have a desktop environment installed, you can use DPMS instead: &lt;code&gt;xset dpms 300 300 300&lt;/code&gt; — add it to &lt;code&gt;~/.bashrc&lt;/code&gt; to make it permanent.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id="summary"&gt;Summary
+&lt;/h2&gt;&lt;table&gt;
+ &lt;thead&gt;
+ &lt;tr&gt;
+ &lt;th&gt;Goal&lt;/th&gt;
+ &lt;th&gt;Solution&lt;/th&gt;
+ &lt;/tr&gt;
+ &lt;/thead&gt;
+ &lt;tbody&gt;
+ &lt;tr&gt;
+ &lt;td&gt;CasaOS + Jellyfin + Immich&lt;/td&gt;
+ &lt;td&gt;Official script from casaos.io&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Static local IP&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;/etc/network/interfaces&lt;/code&gt; or &lt;code&gt;nmcli&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Battery protected (20–80%)&lt;/td&gt;
+ &lt;td&gt;TLP with charge thresholds&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Lid closed without suspend&lt;/td&gt;
+ &lt;td&gt;&lt;code&gt;logind.conf&lt;/code&gt; → &lt;code&gt;HandleLidSwitch=ignore&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Screen blanks at 5 min&lt;/td&gt;
+ &lt;td&gt;GRUB → &lt;code&gt;consoleblank=300&lt;/code&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;/tbody&gt;
+&lt;/table&gt;
+
+ &lt;blockquote&gt;
+ &lt;p&gt;&lt;strong&gt;Before you finish:&lt;/strong&gt; Reboot after all changes — especially the GRUB and logind ones — to make sure everything is active. CasaOS starts automatically on boot.&lt;/p&gt;
+
+ &lt;/blockquote&gt;</description></item></channel></rss>
