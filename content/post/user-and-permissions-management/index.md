@@ -1,6 +1,6 @@
 ---
 title: "Linux User and Permissions Management: A Practical Guide"
-date: 2026-03-29
+date: 2026-03-30
 tags: ["linux", "users", "permissions", "sysadmin", "troubleshooting"]
 categories: ["Linux", "Troubleshooting"]
 description: "A hands-on guide to managing users, groups, and file permissions on Linux — with real commands and common pitfalls."

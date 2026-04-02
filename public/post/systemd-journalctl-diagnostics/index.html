@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="How to read what systemd and journalctl are telling you, so you can fix the root cause instead of the symptom.">
+<title>Diagnosing Failing Services with systemd and journalctl</title>
+
+
+<link rel="canonical" href="http://localhost:1313/post/systemd-journalctl-diagnostics/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap">
+
+
+<link rel="stylesheet" href="/scss/style.min.389e156f5e9bb13df5a924cfa99dfb9c39f3e01e68d9e146cd65bdae963be145.css"><meta property='og:title' content="Diagnosing Failing Services with systemd and journalctl">
+<meta property='og:description' content="How to read what systemd and journalctl are telling you, so you can fix the root cause instead of the symptom.">
+<meta property='og:url' content='http://localhost:1313/post/systemd-journalctl-diagnostics/'>
+<meta property='og:site_name' content='Padrasto&#39;s Linux Lab'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='linux' /><meta property='article:tag' content='systemd' /><meta property='article:tag' content='journalctl' /><meta property='article:tag' content='troubleshooting' /><meta property='article:tag' content='sysadmin' /><meta property='article:published_time' content='2026-03-30T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2026-03-30T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="Diagnosing Failing Services with systemd and journalctl">
+<meta name="twitter:description" content="How to read what systemd and journalctl are telling you, so you can fix the root cause instead of the symptom.">
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "dark");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="Toggle Menu">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        <figure class="site-avatar">
+                <a href="/">
+                    <img src="/img/avatar.jpeg" 
+                        width="460"
+                        height="460"
+                        class="site-logo"
+                        loading="lazy"
+                        alt="Avatar">
+                </a>
+                
+                    <span class="emoji">🐧</span>
+                
+            </figure>
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">Padrasto&#39;s Linux Lab</a></h1>
+            <h2 class="site-description">Linux sysadmin notes, homelab experiments, and open-source tools.</h2>
+        </div>
+    </header><ol class="menu-social">
+            
+                <li>
+                    <a 
+                        href='https://github.com/padrasto'
+                        
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>Home</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>Archives</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        <li class="menu-bottom-section">
+            <ol class="menu">
+
+                
+                    <li id="dark-mode-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                        <span>Dark Mode</span>
+                    </li>
+                
+            </ol>
+        </li>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">Table of contents</h2>
+        
+        <div class="widget--toc">
+            <nav class="toc-nav" id="TableOfContents">
+                
+  <ul>
+    <li><a href="#start-with-systemctl-status">Start with systemctl status</a></li>
+    <li><a href="#read-the-logs-with-journalctl">Read the logs with journalctl</a></li>
+    <li><a href="#check-what-happened-at-a-specific-boot">Check what happened at a specific boot</a></li>
+    <li><a href="#filter-by-priority">Filter by priority</a></li>
+    <li><a href="#check-dependencies-and-ordering">Check dependencies and ordering</a></li>
+    <li><a href="#the-pattern-in-practice">The pattern in practice</a></li>
+    <li><a href="#common-mistakes">Common mistakes</a></li>
+  </ul>
+
+            </nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            
+            
+            
+            <a href="/categories/linux--journalctl/" style="background-color: hsl(227, 60%, 84%); color: hsl(227, 60%, 15%);">
+                Linux , Journalctl
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/post/systemd-journalctl-diagnostics/">Diagnosing Failing Services with systemd and journalctl</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            How to read what systemd and journalctl are telling you, so you can fix the root cause instead of the symptom.
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    
+    
+    
+    <footer class="article-meta">
+        
+            <div class="inline-meta">
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                    <time class="article-time--published" datetime='2026-03-30T00:00:00Z'>Monday, March 30, 2026</time>
+                
+
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                    <time class="article-time--reading">
+                        3 minutes read
+                    </time>
+                
+            </div>
+        
+
+        
+
+        
+    </footer>
+    
+</div>
+
+</header>
+
+    
+    <aside class="article-toc">
+        <details>
+            <summary>
+                <div class="article-toc-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>
+                    <span>Table of contents</span>
+                </div>
+            </summary>
+            <nav class="toc-nav">
+                
+  <ul>
+    <li><a href="#start-with-systemctl-status">Start with systemctl status</a></li>
+    <li><a href="#read-the-logs-with-journalctl">Read the logs with journalctl</a></li>
+    <li><a href="#check-what-happened-at-a-specific-boot">Check what happened at a specific boot</a></li>
+    <li><a href="#filter-by-priority">Filter by priority</a></li>
+    <li><a href="#check-dependencies-and-ordering">Check dependencies and ordering</a></li>
+    <li><a href="#the-pattern-in-practice">The pattern in practice</a></li>
+    <li><a href="#common-mistakes">Common mistakes</a></li>
+  </ul>
+
+            </nav>
+        </details>
+    </aside>
+    
+
+    <section class="article-content">
+    
+    
+    <p>When a service fails on a Linux system, the instinct is often to restart it and move on.
+That works until it doesn&rsquo;t. This article covers how to actually read what systemd and
+journalctl are telling you, so you can fix the root cause instead of the symptom.</p>
+<h2 id="start-with-systemctl-status">Start with systemctl status
+</h2><p>The first command after any service failure:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>systemctl status servicename
+</span></span></code></pre></div><p>This gives you three things immediately: the current state (active, failed, activating),
+the last few log lines, and the PID. Most of the time, the error is already visible here.</p>
+<p>Pay attention to the state codes:</p>
+<ul>
+<li><code>failed (Result: exit-code)</code> — the process started and crashed</li>
+<li><code>failed (Result: timeout)</code> — the process never became ready in time</li>
+<li><code>activating</code> stuck indefinitely — usually a missing dependency or a blocked socket</li>
+</ul>
+<h2 id="read-the-logs-with-journalctl">Read the logs with journalctl
+</h2><p>For the full picture:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>journalctl -u servicename
+</span></span></code></pre></div><p>By default this shows all logs since boot. More useful in practice:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>journalctl -u servicename -n <span style="color:#ae81ff">50</span> --no-pager
+</span></span></code></pre></div><p>This shows the last 50 lines without piping through less. Fast and readable.</p>
+<p>If the service keeps crashing in a loop:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>journalctl -u servicename -f
+</span></span></code></pre></div><p>This follows the log in real time — equivalent to <code>tail -f</code> but for systemd units.</p>
+<h2 id="check-what-happened-at-a-specific-boot">Check what happened at a specific boot
+</h2><p>If the service was working yesterday and broke overnight:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>journalctl --list-boots
+</span></span></code></pre></div><p>Pick the boot you want and pass it with <code>-b</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>journalctl -b -1 -u servicename
+</span></span></code></pre></div><p><code>-b -1</code> means the previous boot. <code>-b -2</code> is two boots ago. Useful after unexpected reboots.</p>
+<h2 id="filter-by-priority">Filter by priority
+</h2><p>Logs contain a lot of noise. To see only errors and critical messages:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>journalctl -u servicename -p err
+</span></span></code></pre></div><p>Priority levels: <code>emerg</code>, <code>alert</code>, <code>crit</code>, <code>err</code>, <code>warning</code>, <code>notice</code>, <code>info</code>, <code>debug</code>.
+In practice, <code>err</code> and <code>warning</code> are where you spend most of your time.</p>
+<h2 id="check-dependencies-and-ordering">Check dependencies and ordering
+</h2><p>A service can fail not because of its own configuration, but because something it depends
+on is not ready. Check the unit file:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>systemctl cat servicename
+</span></span></code></pre></div><p>Look at <code>After=</code>, <code>Requires=</code>, and <code>Wants=</code>. If a dependency is missing or failed,
+your service will fail silently or with a misleading error.</p>
+<p>To see the full dependency tree:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>systemctl list-dependencies servicename
+</span></span></code></pre></div><h2 id="the-pattern-in-practice">The pattern in practice
+</h2><p>A real diagnostic session usually looks like this:</p>
+<ol>
+<li><code>systemctl status servicename</code> — get the immediate error</li>
+<li><code>journalctl -u servicename -n 100 --no-pager</code> — read the full recent log</li>
+<li><code>systemctl cat servicename</code> — check the unit file for misconfigurations</li>
+<li><code>journalctl -b -1 -u servicename</code> — if the issue started after a reboot</li>
+<li>Fix, then <code>systemctl daemon-reload &amp;&amp; systemctl restart servicename</code></li>
+</ol>
+<p>The <code>daemon-reload</code> step is often skipped and causes confusion — if you edit a unit file,
+systemd does not pick up the changes until you reload.</p>
+<h2 id="common-mistakes">Common mistakes
+</h2><p><strong>Restarting without reading logs.</strong> If you restart a failed service without understanding
+why it failed, you are just resetting a countdown to the next failure.</p>
+<p><strong>Forgetting daemon-reload.</strong> Edit a unit file, skip the reload, restart the service,
+see the old behaviour, conclude the edit did nothing. Always reload after editing unit files.</p>
+<p><strong>Ignoring the state code.</strong> <code>exit-code</code> and <code>timeout</code> point to completely different
+problems. Reading the state before diving into logs saves time.</p>
+<hr>
+<p>systemd and journalctl give you enough information to diagnose almost any service failure
+without guessing. The skill is knowing where to look and in what order.</p>
+
+</section>
+
+
+    <footer class="article-meta article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/linux/">Linux</a>
+        
+            <a href="/tags/systemd/">Systemd</a>
+        
+            <a href="/tags/journalctl/">Journalctl</a>
+        
+            <a href="/tags/troubleshooting/">Troubleshooting</a>
+        
+            <a href="/tags/sysadmin/">Sysadmin</a>
+        
+    </section>
+
+
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside>
+    <h2 class="section-title">Related content</h2>
+    <div class="subsection-list">
+        <div class="article-list--tile">
+            
+                
+<article class="">
+    <a href="/post/user-and-permissions-management/">
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Linux User and Permissions Management: A Practical Guide</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/post/cronjobs-troubleshooting/">
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Cronjob Not Running? Here&#39;s How to Actually Debug It</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/post/disk-monitoring-bash/">
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Disk Monitoring on Linux — Bash Script and Automation</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/post/nginx-on-ubuntu-setup-and-troubleshooting/">
+        
+
+        <div class="article-details">
+            <h2 class="article-title">nginx on Ubuntu — Complete Setup and Troubleshooting Guide</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2026 Padrasto&#39;s Linux Lab
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        Theme <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="4.0.0">Stack</a></b> designed by <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a>
+    </section>
+</footer>
+
+
+    
+
+
+
+<script type="module">
+    import gallery from '\/ts\/gallery.js';
+
+    const articleContent = document.querySelector('.article-content');
+    const shouldLoad = articleContent && (articleContent.querySelectorAll('figure').length > 0 || articleContent.querySelectorAll('img.gallery-image').length > 0);
+    
+    if (shouldLoad) {
+        gallery(articleContent);
+
+        const PhotoSwipeLightbox = (await import("https:\/\/cdn.jsdelivr.net\/npm\/photoswipe@5.4.4\/dist\/photoswipe-lightbox.esm.min.js")).default;
+        const styleHref = "https:\/\/cdn.jsdelivr.net\/npm\/photoswipe@5.4.4\/dist\/photoswipe.css";
+
+        const styleTag = document.createElement('link');
+        styleTag.rel = 'stylesheet';
+        styleTag.href = styleHref;
+        document.head.appendChild(styleTag);
+
+        const lightbox = new PhotoSwipeLightbox({
+            gallerySelector: '.article-content',
+            childSelector: 'figure a.image-link',
+            pswpModule: () => import("https:\/\/cdn.jsdelivr.net\/npm\/photoswipe@5.4.4\/dist\/photoswipe.esm.min.js")
+        });
+        lightbox.init();
+    }
+</script>
+    
+
+            </main>
+        </div>
+        
+<script type="text/javascript" src="/ts/main.a604d97ca1173d33c6dc35a29ead1806827820a14c3dd6073c9059eb7298c429.js" defer></script>
+
+
+    </body>
+</html>
