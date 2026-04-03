@@ -1,4 +1,195 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Padrasto's Linux Lab</title><link>https://padrasto.github.io/</link><description>Recent content on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Thu, 02 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>ThinkPad T480 as a Home Server with CasaOS</title><link>https://padrasto.github.io/post/thinkpad-home-server/</link><pubDate>Thu, 02 Apr 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/thinkpad-home-server/</guid><description>&lt;p&gt;I had a ThinkPad T480 collecting dust. Instead of leaving it that way, I turned it into a home server running &lt;strong&gt;CasaOS&lt;/strong&gt; — a clean web dashboard for managing self-hosted apps in containers. The goal: &lt;strong&gt;Jellyfin&lt;/strong&gt; for media streaming and &lt;strong&gt;Immich&lt;/strong&gt; for photo backup, fully self-hosted and under my control.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Padrasto's Linux Lab</title><link>https://padrasto.github.io/</link><description>Recent content on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Fri, 03 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>Immich, Firewall, and Private Remote Access</title><link>https://padrasto.github.io/post/immich-security-remote-access/</link><pubDate>Fri, 03 Apr 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/immich-security-remote-access/</guid><description>&lt;p&gt;&lt;em&gt;This is Part 2 of the ThinkPad T480 home server series. &lt;a class="link" href="https://padrasto.github.io/post/thinkpad-home-server/" &gt;Part 1&lt;/a&gt; covers CasaOS installation, static IP, battery protection, and screen blanking.&lt;/em&gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;With the server running, the next step was getting my photos off Google and into Immich, then making sure the server was properly locked down and reachable from outside the house — without opening ports on the router or compromising privacy.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id="step-01--importing-google-takeout-into-immich"&gt;Step 01 — Importing Google Takeout into Immich
+&lt;/h2&gt;&lt;p&gt;Google exports your photos in a specific structure: each image comes with a separate &lt;code&gt;.json&lt;/code&gt; file containing its metadata (original date, GPS location, etc.).&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Takeout/
+ Google Photos/
+ Photos from 2018/
+ photo.jpg
+ photo.jpg.json ← metadata: date, location, etc.
+ Photos from 2019/
+ ...
+&lt;/code&gt;&lt;/pre&gt;
+ &lt;blockquote&gt;
+ &lt;p&gt;&lt;strong&gt;Warning:&lt;/strong&gt; If you import photos directly without handling the &lt;code&gt;.json&lt;/code&gt; files, you lose original dates and locations. The Immich CLI handles this automatically.&lt;/p&gt;
+
+ &lt;/blockquote&gt;
+&lt;h3 id="install-the-immich-cli"&gt;Install the Immich CLI
+&lt;/h3&gt;&lt;p&gt;The photos live on your local PC, not the server. Install the CLI locally — Node.js is required:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# verify Node.js is installed&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;node --version
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;npm --version
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# install the CLI&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo npm install -g @immich/cli
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="authenticate-with-an-api-key"&gt;Authenticate with an API key
+&lt;/h3&gt;&lt;p&gt;The CLI uses an API key, not email/password. To get one:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Immich → avatar (top right) → Account Settings → API Keys → New API Key&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;immich login http://192.168.1.x:2283 &amp;lt;YOUR-API-KEY&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Replace &lt;code&gt;192.168.1.x&lt;/code&gt; with your server&amp;rsquo;s static IP.&lt;/p&gt;
+&lt;h3 id="upload"&gt;Upload
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;immich upload --recursive &lt;span style="color:#ae81ff"&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ~/Pictures/Takeout/Google&lt;span style="color:#ae81ff"&gt;\ &lt;/span&gt;Photos
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The CLI will crawl all subfolders, hash every file, check for duplicates, and upload what&amp;rsquo;s new. On a 13 GB library it found 4848 files and 0 duplicates.&lt;/p&gt;
+&lt;p&gt;During the import the server will run hot — all CPU cores at 95–100% while Immich generates thumbnails and runs its machine learning models for face recognition and scene classification. This is normal and temporary.&lt;/p&gt;
+
+ &lt;blockquote&gt;
+ &lt;p&gt;&lt;strong&gt;Tip:&lt;/strong&gt; Monitor background processing progress at &lt;strong&gt;Administration → Jobs&lt;/strong&gt; in the Immich web panel. Face detection and AI classification can take several hours depending on library size.&lt;/p&gt;
+
+ &lt;/blockquote&gt;
+&lt;hr&gt;
+&lt;h2 id="step-02--firewall-with-ufw"&gt;Step 02 — Firewall with UFW
+&lt;/h2&gt;&lt;p&gt;By default, Debian has no active firewall. Before the server does anything on the network, it&amp;rsquo;s worth defining exactly what&amp;rsquo;s allowed in — and blocking everything else.&lt;/p&gt;
+&lt;p&gt;The rule is simple: Immich, Jellyfin, and CasaOS should only be reachable from the local network. Same for SSH. Nothing should be directly exposed to the internet.&lt;/p&gt;
+&lt;p&gt;First, find your network interface name:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ip link show
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You&amp;rsquo;ll see something like &lt;code&gt;eth0&lt;/code&gt;, &lt;code&gt;enp0s25&lt;/code&gt;, or &lt;code&gt;enp3s0&lt;/code&gt;. Replace &lt;code&gt;&amp;lt;interface&amp;gt;&lt;/code&gt; in the commands below with yours.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# default policies&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw default deny incoming
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw default allow outgoing
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# SSH — local network only&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw allow in on &amp;lt;interface&amp;gt; from 192.168.1.0/24 to any port &lt;span style="color:#ae81ff"&gt;22&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Jellyfin — local network only&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw allow in on &amp;lt;interface&amp;gt; from 192.168.1.0/24 to any port &lt;span style="color:#ae81ff"&gt;8097&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# Immich — local network only&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw allow in on &amp;lt;interface&amp;gt; from 192.168.1.0/24 to any port &lt;span style="color:#ae81ff"&gt;2283&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# CasaOS panel — local network only&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw allow in on &amp;lt;interface&amp;gt; from 192.168.1.0/24 to any port &lt;span style="color:#ae81ff"&gt;80&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# enable&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw enable
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw status verbose
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;on &amp;lt;interface&amp;gt;&lt;/code&gt; flag scopes each rule to your ethernet interface specifically — more precise than relying solely on the subnet filter.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id="step-03--remote-access-without-opening-ports"&gt;Step 03 — Remote Access Without Opening Ports
+&lt;/h2&gt;&lt;p&gt;I want to reach Immich from outside the house. My router doesn&amp;rsquo;t support port forwarding. The two most common solutions are &lt;strong&gt;Cloudflare Tunnel&lt;/strong&gt; and &lt;strong&gt;Tailscale&lt;/strong&gt; — but they have very different privacy implications.&lt;/p&gt;
+&lt;h3 id="the-privacy-comparison"&gt;The privacy comparison
+&lt;/h3&gt;&lt;table&gt;
+ &lt;thead&gt;
+ &lt;tr&gt;
+ &lt;th&gt;Service&lt;/th&gt;
+ &lt;th&gt;Sees content?&lt;/th&gt;
+ &lt;th&gt;Jurisdiction&lt;/th&gt;
+ &lt;th&gt;Free?&lt;/th&gt;
+ &lt;/tr&gt;
+ &lt;/thead&gt;
+ &lt;tbody&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Cloudflare Tunnel&lt;/td&gt;
+ &lt;td&gt;⚠️ Yes (SSL termination)&lt;/td&gt;
+ &lt;td&gt;🇺🇸 CLOUD Act&lt;/td&gt;
+ &lt;td&gt;✅&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Tailscale&lt;/td&gt;
+ &lt;td&gt;✅ No (E2E encrypted)&lt;/td&gt;
+ &lt;td&gt;🇨🇦 Canada&lt;/td&gt;
+ &lt;td&gt;✅&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Pangolin + Hetzner VPS&lt;/td&gt;
+ &lt;td&gt;✅ No&lt;/td&gt;
+ &lt;td&gt;🇪🇺 GDPR&lt;/td&gt;
+ &lt;td&gt;❌ ~€4/month&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Cloudflare performs SSL termination — your traffic is decrypted on their servers before being re-encrypted. That means they can technically read your photos. For a personal family archive, that&amp;rsquo;s a non-starter. Their free plan also prohibits using tunnels for media streaming, so Jellyfin would violate the terms of service.&lt;/p&gt;
+&lt;p&gt;The most private European option would be self-hosting &lt;a class="link" href="https://github.com/fosrl/pangolin" target="_blank" rel="noopener"
+ &gt;Pangolin&lt;/a&gt; on a Hetzner VPS (~€4/month), which gives you full control under GDPR. For now, &lt;strong&gt;Tailscale&lt;/strong&gt; is a reasonable middle ground: free, end-to-end encrypted with WireGuard, and your content never touches their servers.&lt;/p&gt;
+&lt;p&gt;What Tailscale &lt;em&gt;can&lt;/em&gt; see: connection metadata — when you connected, from where, how much traffic. What they &lt;em&gt;cannot&lt;/em&gt; see: the content itself.&lt;/p&gt;
+&lt;h3 id="install-tailscale-on-the-server"&gt;Install Tailscale on the server
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;curl -fsSL https://tailscale.com/install.sh | sh
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo tailscale up
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;A link will appear — open it in a browser to authenticate with your Tailscale account. Then check the assigned IP:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;tailscale ip
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="install-the-tailscale-app-on-your-devices"&gt;Install the Tailscale app on your devices
+&lt;/h3&gt;&lt;p&gt;Download the Tailscale app on your phone or laptop, sign in with the same account, and you can reach Immich from anywhere via the server&amp;rsquo;s Tailscale IP:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;http://100.x.x.x:2283
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id="ufw-rules-for-tailscale"&gt;UFW rules for Tailscale
+&lt;/h3&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# allow all traffic from the Tailscale interface&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw allow in on tailscale0
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# allow the Tailscale UDP port&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw allow 41641/udp
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;h2 id="step-04--fail2ban"&gt;Step 04 — Fail2ban
+&lt;/h2&gt;&lt;p&gt;UFW blocks ports, but it doesn&amp;rsquo;t protect against someone repeatedly guessing your SSH password. Fail2ban watches the logs and automatically bans IPs that fail too many times.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install fail2ban -y
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Create the local configuration file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/fail2ban/jail.local
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;[DEFAULT]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;bantime&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;1h&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;findtime&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;10m&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;maxretry&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;5&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;[sshd]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;enabled&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;port&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;22&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;filter&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;sshd&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;logpath&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;/var/log/auth.log&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;maxretry&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;3&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl enable fail2ban
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl start fail2ban
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;# verify&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo fail2ban-client status sshd
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;With this configuration, any IP that fails SSH login 3 times in 10 minutes gets banned for 1 hour.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id="summary"&gt;Summary
+&lt;/h2&gt;&lt;table&gt;
+ &lt;thead&gt;
+ &lt;tr&gt;
+ &lt;th&gt;Configuration&lt;/th&gt;
+ &lt;th&gt;Status&lt;/th&gt;
+ &lt;/tr&gt;
+ &lt;/thead&gt;
+ &lt;tbody&gt;
+ &lt;tr&gt;
+ &lt;td&gt;CasaOS + Jellyfin + Immich&lt;/td&gt;
+ &lt;td&gt;✅ Running&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Static IP&lt;/td&gt;
+ &lt;td&gt;✅ Configured&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Battery protection 20–80% (TLP)&lt;/td&gt;
+ &lt;td&gt;✅ Active&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Lid closed without suspend&lt;/td&gt;
+ &lt;td&gt;✅ logind.conf&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Screen blanks at 5 min&lt;/td&gt;
+ &lt;td&gt;✅ consoleblank=300&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Photos imported from Google Takeout&lt;/td&gt;
+ &lt;td&gt;✅ Immich CLI&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Firewall (UFW)&lt;/td&gt;
+ &lt;td&gt;✅ Local network only&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;Private remote access&lt;/td&gt;
+ &lt;td&gt;✅ Tailscale E2E&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;tr&gt;
+ &lt;td&gt;SSH brute-force protection&lt;/td&gt;
+ &lt;td&gt;✅ Fail2ban&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;strong&gt;Optional next steps:&lt;/strong&gt; SSH key authentication instead of password (&lt;code&gt;ssh-keygen -t ed25519&lt;/code&gt;) and automatic security updates with &lt;code&gt;unattended-upgrades&lt;/code&gt;.&lt;/p&gt;</description></item><item><title>ThinkPad T480 as a Home Server with CasaOS</title><link>https://padrasto.github.io/post/thinkpad-home-server/</link><pubDate>Thu, 02 Apr 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/thinkpad-home-server/</guid><description>&lt;p&gt;I had a ThinkPad T480 collecting dust. Instead of leaving it that way, I turned it into a home server running &lt;strong&gt;CasaOS&lt;/strong&gt; — a clean web dashboard for managing self-hosted apps in containers. The goal: &lt;strong&gt;Jellyfin&lt;/strong&gt; for media streaming and &lt;strong&gt;Immich&lt;/strong&gt; for photo backup, fully self-hosted and under my control.&lt;/p&gt;
 &lt;p&gt;Along the way I also dealt with three problems that come up whenever you use a laptop as a server: protecting the battery, keeping the machine running with the lid closed, and blanking the screen automatically so it doesn&amp;rsquo;t wear out.&lt;/p&gt;
 &lt;p&gt;Here&amp;rsquo;s the full guide, step by step.&lt;/p&gt;
 &lt;hr&gt;
