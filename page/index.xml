@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Pages on Padrasto's Linux Lab</title><link>https://padrasto.github.io/page/</link><description>Recent content in Pages on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Sun, 05 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/page/index.xml" rel="self" type="application/rss+xml"/><item><title>About</title><link>https://padrasto.github.io/page/about/</link><pubDate>Sun, 05 Apr 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/page/about/</guid><description>&lt;p&gt;I&amp;rsquo;m Padrasto — a self-taught Linux practitioner based in Portugal, with around 10 years of hands-on experience running and breaking Linux systems.&lt;/p&gt;
+&lt;p&gt;This blog is where I document real problems and real fixes: things I&amp;rsquo;ve actually done on my homelab, my VMs, and production-grade setups. No padding, no fluff.&lt;/p&gt;
+&lt;h2 id="what-i-work-with"&gt;What I work with
+&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Distros:&lt;/strong&gt; Debian, Ubuntu Server, Arch, Proxmox&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Virtualisation:&lt;/strong&gt; KVM/QEMU, Docker, LXC&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Web &amp;amp; networking:&lt;/strong&gt; nginx, SSL/TLS, reverse proxies, WireGuard VPN&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Databases:&lt;/strong&gt; MySQL — setup, backup, recovery, access control&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Monitoring &amp;amp; automation:&lt;/strong&gt; systemd, journalctl, Bash scripting, cron&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Self-hosting:&lt;/strong&gt; Jellyfin, Immich, Nextcloud, Homarr, and more&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Security:&lt;/strong&gt; UFW, Fail2ban, SSH hardening, Tor, LUKS&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="what-i-do"&gt;What I do
+&lt;/h2&gt;&lt;p&gt;I offer Linux support and setup services for individuals and small businesses — remotely, via Upwork or direct contact.&lt;/p&gt;
+&lt;p&gt;Typical work:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;VPS setup and hardening&lt;/li&gt;
+&lt;li&gt;nginx configuration and troubleshooting&lt;/li&gt;
+&lt;li&gt;MySQL installation, backup, and recovery&lt;/li&gt;
+&lt;li&gt;WireGuard VPN deployment&lt;/li&gt;
+&lt;li&gt;Docker stack deployment and maintenance&lt;/li&gt;
+&lt;li&gt;General Linux sysadmin support (Tier 1/2)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="contact"&gt;Contact
+&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;💼 &lt;a class="link" href="https://www.upwork.com" target="_blank" rel="noopener"
+ &gt;Upwork&lt;/a&gt; — search &lt;strong&gt;Padrasto&lt;/strong&gt; &lt;em&gt;(link coming soon)&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;🔗 &lt;a class="link" href="https://www.linkedin.com" target="_blank" rel="noopener"
+ &gt;LinkedIn&lt;/a&gt; &lt;em&gt;(link coming soon)&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;🐙 &lt;a class="link" href="https://github.com/padrasto" target="_blank" rel="noopener"
+ &gt;GitHub&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description></item></channel></rss>
