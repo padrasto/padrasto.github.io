@@ -1,53 +1,200 @@
 ---
-title: Instalação e uso do nmap 
-author: pa3r1ck
-date: 2023-03-13 22:10:00 +0800
-categories: [nmap]
-tags: [nmap]
-pin: false
+title: "nmap — A Practical Guide for Sysadmins"
+date: 2023-03-13
+categories: ["Nmap"]
+tags: ["nmap", "networking", "security", "sysadmin", "linux"]
 ---
 
-![image](https://camo.githubusercontent.com/2502e407355cd4180a1c66f1d93c744db982fc70e0504db04e2090afac7760fb/68747470733a2f2f692e6962622e636f2f4e54796e6472462f702d6e6d61702e706e67)
+nmap (Network Mapper) is an open-source tool for network discovery and security auditing. It's one of the most used tools in a sysadmin's toolkit — not just for penetration testing, but for everyday tasks like checking which ports are open on a server, discovering hosts on a network, or verifying firewall rules are working as expected.
 
+This article covers installation and the most useful scan types, with an explanation of what each one actually does under the hood.
 
+## Installation
 
-Nmap é uma ferramenta de código aberto amplamente utilizada para escanear e mapear redes. É uma das ferramentas mais populares entre os profissionais de segurança e administradores de sistemas, e pode ser usada para identificar vulnerabilidades em redes e sistemas.
-
-Se você é um usuário do sistema operacional Ubuntu, instalar o Nmap é fácil. Basta abrir o terminal e digitar o seguinte comando:
-``` bash
-sudo apt-get install nmap
-```
-Isso irá instalar o Nmap no seu sistema. Depois de instalado, você pode começar a explorar as funcionalidades do Nmap.
-
-Aqui estão cinco exemplos de como você pode usar o Nmap:
-
-Escanear portas em um sistema: O Nmap pode ser usado para escanear portas em um sistema. Isso ajuda a identificar quais portas estão abertas e podem ser usadas para acesso não autorizado. Para escanear portas em um sistema, basta digitar o seguinte comando no terminal:
-``` bash
-nmap <endereço IP>
+```bash
+sudo apt install nmap
 ```
 
-Descobrir dispositivos em uma rede: O Nmap pode ser usado para descobrir dispositivos em uma rede. Isso pode ser útil para identificar quais dispositivos estão conectados à sua rede. Para descobrir dispositivos em uma rede, basta digitar o seguinte comando no terminal:
-``` bash
-nmap -sP <endereço IP>/24
+Verify the installed version:
+
+```bash
+nmap --version
 ```
 
+## Understanding Scan Types
 
-Descobrir o sistema operacional em um sistema: O Nmap pode ser usado para descobrir o sistema operacional em um sistema. Isso pode ser útil para identificar quais sistemas operacionais estão sendo usados em uma rede. Para descobrir o sistema operacional em um sistema, basta digitar o seguinte comando no terminal:
-``` bash
-nmap -O <endereço IP>
+Before running scans, it's worth understanding the two main methods nmap uses to probe ports.
+
+**TCP Connect scan (`-sT`)** — completes a full TCP three-way handshake (SYN → SYN-ACK → ACK). It's reliable but noisy: the connection is fully logged by the target.
+
+**SYN scan (`-sS`)** — sends a SYN packet and waits for a response, but never completes the handshake. If the port is open, the target replies with SYN-ACK; nmap then sends RST to tear it down without establishing a connection. This is the default when run as root, and it's faster and less likely to appear in application logs.
+
+**UDP scan (`-sU`)** — scans UDP ports. Slower than TCP scans because UDP has no handshake — nmap has to wait for ICMP "port unreachable" responses or timeouts to determine port state.
+
+## Basic Host Scan
+
+Scan a single host for open ports:
+
+```bash
+nmap 192.168.1.10
 ```
 
+By default, nmap scans the 1,000 most commonly used TCP ports. Open ports, their state, and the service name are shown in the output.
 
-Escanear vulnerabilidades em um sistema: O Nmap pode ser usado para escanear vulnerabilidades em um sistema. Isso pode ajudar a identificar quais sistemas estão em risco de serem explorados por hackers. Para escanear vulnerabilidades em um sistema, basta digitar o seguinte comando no terminal:
-``` bash
-nmap -sV --script vuln <endereço IP>
+Scan a specific port or range:
+
+```bash
+nmap -p 22 192.168.1.10
+nmap -p 22,80,443 192.168.1.10
+nmap -p 1-1024 192.168.1.10
 ```
 
+Scan all 65,535 ports:
 
-Escanear uma rede Wi-Fi: O Nmap também pode ser usado para escanear uma rede Wi-Fi. Isso pode ajudar a identificar quais dispositivos estão conectados à sua rede Wi-Fi e se há dispositivos não autorizados. Para escanear uma rede Wi-Fi, basta digitar o seguinte comando no terminal:
-``` bash
-sudo nmap -sS <endereço IP>/24
+```bash
+nmap -p- 192.168.1.10
 ```
 
+## Host Discovery on a Network
 
-Em conclusão, o Nmap é uma ferramenta extremamente útil para administradores de rede e segurança. Se você é novo no uso do Nmap, comece experimentando esses exemplos e descubra como o Nmap pode ajudar a proteger sua rede e sistemas contra ameaças externas.
+Discover which hosts are up on a subnet without scanning their ports:
+
+```bash
+nmap -sn 192.168.1.0/24
+```
+
+`-sn` (previously `-sP`) sends ICMP echo requests and ARP probes to each address in the range and reports which ones respond. Useful for mapping a network quickly.
+
+To scan all discovered hosts and their ports in one command:
+
+```bash
+nmap 192.168.1.0/24
+```
+
+## SYN Scan
+
+The default scan type when run as root. Faster and stealthier than a full TCP connect scan:
+
+```bash
+sudo nmap -sS 192.168.1.10
+```
+
+## Service and Version Detection
+
+Identify the software and version running on each open port:
+
+```bash
+nmap -sV 192.168.1.10
+```
+
+nmap sends probes to each open port and compares responses against its service fingerprint database. The output will show something like `OpenSSH 8.9p1` or `nginx 1.18.0` next to the port number.
+
+Combine with `-p-` to check all ports:
+
+```bash
+nmap -sV -p- 192.168.1.10
+```
+
+## OS Detection
+
+Attempt to identify the operating system of the target based on TCP/IP stack behaviour:
+
+```bash
+sudo nmap -O 192.168.1.10
+```
+
+nmap compares packet characteristics (TTL values, TCP window size, IP flags) against a fingerprint database. It works best when at least one open and one closed port are found. Results include a confidence percentage — treat them as educated guesses rather than certainties.
+
+## Combining Options
+
+The most common all-in-one scan for a full picture of a host:
+
+```bash
+sudo nmap -sS -sV -O 192.168.1.10
+```
+
+Or use the aggressive scan flag, which enables OS detection, version detection, script scanning, and traceroute:
+
+```bash
+sudo nmap -A 192.168.1.10
+```
+
+`-A` is convenient but noisy — don't use it on networks you don't own or have explicit permission to test.
+
+## Script Engine (NSE)
+
+nmap includes a scripting engine (NSE) with hundreds of scripts for tasks ranging from service enumeration to vulnerability detection. Scripts are located in `/usr/share/nmap/scripts/`.
+
+Run scripts against a target:
+
+```bash
+nmap --script <script_name> 192.168.1.10
+```
+
+Run all scripts in the `vuln` category to check for known vulnerabilities:
+
+```bash
+nmap -sV --script vuln 192.168.1.10
+```
+
+Check the default scripts (safe, non-intrusive):
+
+```bash
+nmap -sC 192.168.1.10
+```
+
+List available scripts by category:
+
+```bash
+ls /usr/share/nmap/scripts/ | grep smb
+```
+
+## Output Formats
+
+Save scan results to a file. nmap supports several formats:
+
+Normal text output:
+
+```bash
+nmap -oN scan.txt 192.168.1.10
+```
+
+XML output (useful for parsing with other tools):
+
+```bash
+nmap -oX scan.xml 192.168.1.10
+```
+
+Grepable format:
+
+```bash
+nmap -oG scan.gnmap 192.168.1.10
+```
+
+Save all three formats at once:
+
+```bash
+nmap -oA scan 192.168.1.10
+```
+
+This creates `scan.txt`, `scan.xml`, and `scan.gnmap`.
+
+## Timing and Performance
+
+nmap has six timing templates (`-T0` to `-T5`) that control scan speed and aggressiveness:
+
+- `-T0` / `-T1` — very slow, designed to evade IDS detection
+- `-T2` — slow
+- `-T3` — default
+- `-T4` — faster, recommended for local networks
+- `-T5` — fastest, may miss results on congested networks
+
+```bash
+nmap -T4 192.168.1.0/24
+```
+
+## A Note on Permission
+
+nmap is a powerful tool. Always use it only on networks and systems you own or have explicit written permission to test. Running intrusive scans against systems you don't control is illegal in most jurisdictions, regardless of intent.
+
+For lab practice, set up a local VM — something like Metasploitable2 or a basic Ubuntu Server — and scan that instead.

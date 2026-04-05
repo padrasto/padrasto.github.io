@@ -2,6 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>http://localhost:1313/page/about/</loc>
+    <lastmod>2026-04-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/</loc>
+    <lastmod>2026-04-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/page/</loc>
+    <lastmod>2026-04-05T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>http://localhost:1313/tags/casaos/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
@@ -24,9 +33,6 @@
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/linux/</loc>
-    <lastmod>2026-04-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/</loc>
@@ -129,84 +135,117 @@
     <lastmod>2026-03-18T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/proxmox-laptop/</loc>
-    <lastmod>2023-07-19T20:10:00+08:00</lastmod>
+    <lastmod>2023-07-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/proxmox/</loc>
-    <lastmod>2023-07-19T20:10:00+08:00</lastmod>
+    <lastmod>2023-07-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/proxmox/</loc>
-    <lastmod>2023-07-19T20:10:00+08:00</lastmod>
+    <lastmod>2023-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/virtualisation/</loc>
+    <lastmod>2023-07-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/hardening/</loc>
+    <lastmod>2023-07-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/security/</loc>
+    <lastmod>2023-07-18T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/ssh/</loc>
-    <lastmod>2023-07-18T21:10:00+08:00</lastmod>
+    <lastmod>2023-07-18T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/ssh/</loc>
-    <lastmod>2023-07-18T21:10:00+08:00</lastmod>
+    <lastmod>2023-07-18T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/ssh-ubuntu/</loc>
-    <lastmod>2023-07-18T21:10:00+08:00</lastmod>
+    <lastmod>2023-07-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/criar-um-site-na-rede-onion/</loc>
-    <lastmod>2023-05-03T21:10:00+08:00</lastmod>
+    <loc>http://localhost:1313/tags/apache/</loc>
+    <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/debian/</loc>
-    <lastmod>2023-05-03T21:10:00+08:00</lastmod>
+    <lastmod>2023-05-03T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/post/criar-um-site-na-rede-onion/</loc>
+    <lastmod>2023-05-03T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/onion/</loc>
+    <lastmod>2023-05-03T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/self-hosting/</loc>
+    <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/tor/</loc>
-    <lastmod>2023-05-03T21:10:00+08:00</lastmod>
+    <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/tor/</loc>
-    <lastmod>2023-05-03T21:10:00+08:00</lastmod>
+    <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/nmap/</loc>
-    <lastmod>2023-03-13T22:10:00+08:00</lastmod>
+    <loc>http://localhost:1313/tags/networking/</loc>
+    <lastmod>2023-03-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/nmap/</loc>
-    <lastmod>2023-03-13T22:10:00+08:00</lastmod>
+    <lastmod>2023-03-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/nmap/</loc>
-    <lastmod>2023-03-13T22:10:00+08:00</lastmod>
+    <lastmod>2023-03-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/post/nmap/</loc>
+    <lastmod>2023-03-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/</loc>
-    <lastmod>2023-03-09T21:10:00+08:00</lastmod>
+    <lastmod>2023-03-09T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/kvm/</loc>
-    <lastmod>2023-03-09T21:10:00+08:00</lastmod>
+    <lastmod>2023-03-09T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/kvm/</loc>
-    <lastmod>2023-03-09T21:10:00+08:00</lastmod>
+    <lastmod>2023-03-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/libvirt/</loc>
+    <lastmod>2023-03-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/qemu/</loc>
+    <lastmod>2023-03-09T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/docker/</loc>
-    <lastmod>2023-02-28T23:10:00+08:00</lastmod>
+    <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/docker/</loc>
-    <lastmod>2023-02-28T23:10:00+08:00</lastmod>
+    <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/kali-docker/</loc>
-    <lastmod>2023-02-28T23:10:00+08:00</lastmod>
+    <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/kali-linux/</loc>
-    <lastmod>2023-02-28T23:10:00+08:00</lastmod>
+    <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/kali-linux/</loc>
-    <lastmod>2023-02-28T23:10:00+08:00</lastmod>
+    <lastmod>2023-02-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/rdp/</loc>
+    <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/xfce/</loc>
-    <lastmod>2023-02-28T23:10:00+08:00</lastmod>
+    <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/wireguard-no-ubuntu/</loc>
-    <lastmod>2023-02-27T20:10:00+08:00</lastmod>
+    <lastmod>2023-02-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/vpn/</loc>
+    <lastmod>2023-02-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/wireguard/</loc>
-    <lastmod>2023-02-27T20:10:00+08:00</lastmod>
+    <lastmod>2023-02-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/wireshark/</loc>
-    <lastmod>2023-02-26T20:10:00+08:00</lastmod>
+    <lastmod>2023-02-26T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/wireshark/</loc>
-    <lastmod>2023-02-26T20:10:00+08:00</lastmod>
+    <lastmod>2023-02-26T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/wireshark/</loc>
-    <lastmod>2023-02-26T20:10:00+08:00</lastmod>
+    <lastmod>2023-02-26T00:00:00+00:00</lastmod>
   </url>
 </urlset>

@@ -1,72 +1,197 @@
 ---
-title: Instalação do Wireguard num servidor Ubuntu
-author: pa3r1ck
-date: 2023-02-27 20:10:00 +0800
-categories: [Ubuntu]
-tags: [wireguard]
-pin: false
+title: "Setting Up a WireGuard VPN Server on Ubuntu"
+date: 2023-02-27
+categories: ["Ubuntu"]
+tags: ["wireguard", "vpn", "ubuntu", "networking", "sysadmin"]
 ---
 
-![image](https://upload.wikimedia.org/wikipedia/commons/9/98/Logo_of_WireGuard.svg)
+WireGuard is a modern VPN protocol built directly into the Linux kernel since version 5.6. Compared to OpenVPN or IPsec, it's significantly simpler to configure, faster, and has a much smaller attack surface — the entire codebase is around 4,000 lines, versus hundreds of thousands for OpenVPN.
 
+WireGuard uses a peer-to-peer model with public/private key pairs — similar to SSH keys. Each peer generates its own keypair, shares its public key with the other side, and WireGuard handles authentication and encryption automatically. No certificates, no certificate authorities, no complex handshake configuration.
 
-## Este artigo trata da criação de uma VPN com o protocolo Wireguard.
+This article covers a full manual setup: server configuration, firewall rules, and client configuration — no scripts.
 
-Para tal é necessário tem um servidor neste caso iremos utilizar um servidor Ubuntu.
+## Install WireGuard
 
-Para facilitar a instalação vamos utilizar um script que automatiza todo o processo. Esse scipt está disponivél no Github e todos os créditos vão para o seu desenvolvedor. 
+On the server:
 
-Todo este processo em vai ter lugar no nosso servidor em primeiro lugar e logo em seguida configuramos o cliente.
-
-Em primeiro lugar clonamos o script, alteramos as permições e executamos o mesmo.
-``` bash
-curl -O https://raw.githubusercontent.com/angristan/wireguard-install/master/wireguard-install.sh
-
-chmod +x wireguard-install.sh
-
-./wireguard-install.sh
+```bash
+sudo apt update && sudo apt install wireguard
 ```
 
-No final de executados os comandos a cima é só seguir os passos que são bastante intuitivos. No final é gerado um QR code com toda a informação necessária para configurar o cliente.
+## Generate the Server Keys
 
-## Cofiguração do cliente 
+Generate the private key first, then derive the public key from it:
 
-Neste caso vamos utilizar o Linux Ubuntu como cliente mas estes passos podem ser facilmente replicados em qualquer distribuição Linux.
-
-``` bash
-sudo apt install wireguard 
+```bash
+wg genkey | sudo tee /etc/wireguard/server_private.key | wg pubkey | sudo tee /etc/wireguard/server_public.key
 ```
 
-De seguida criamos um arquivo de texto com o editor "nano" e inserimos a informação obtida através do QR code.
+Restrict permissions on the private key:
 
-``` bash
-sudo nano /etc/wireguard/wg0.conf 
+```bash
+sudo chmod 600 /etc/wireguard/server_private.key
 ```
 
-Fica aqui um exemplo de como fica o arquivo no final de inserir as informações geradas.
+Note both values — you'll need them in the configuration file:
 
-``` bash
+```bash
+sudo cat /etc/wireguard/server_private.key
+sudo cat /etc/wireguard/server_public.key
+```
+
+## Configure the Server
+
+Create the server configuration file:
+
+```bash
+sudo nano /etc/wireguard/wg0.conf
+```
+
+```ini
 [Interface]
-PrivateKey = ICkL1OUeq2UOXd9FLlgHxOesvsN+WXxb8/BrNBgSllg=
-Address = 10.66.66.2/32,fd42:42:42::2/128
-DNS = 94.140.14.14,94.140.15.15
-
-[Peer]
-PublicKey = 8o7MZzWVM4jBkcJYSFpbBEdd7bLhWDCOwXMr0K7vVCQ=
-PresharedKey = fTO+tOawy912esxEW1zNYrcgLpYvuIqj17UPI+GOyb0=
-Endpoint = 139.162.208.222:65513
-AllowedIPs = 0.0.0.0/0,::/0
+PrivateKey = <server_private_key>
+Address = 10.66.66.1/24
+ListenPort = 51820
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 ```
 
-Salvamos o aquivo de texto e só nos resta establecer a ligação ao nosso servidor VPN. Para iniciar o serviço basta executar o seguinte comando na nossa máquina cliente.
-``` bash
+What each field does:
+- `PrivateKey` — the server's private key generated above
+- `Address` — the server's IP inside the VPN tunnel. `10.66.66.1/24` defines the tunnel network as `10.66.66.0/24`
+- `ListenPort` — the UDP port WireGuard listens on. `51820` is the standard port
+- `PostUp` — iptables rules that run when the interface comes up. The `FORWARD` rule allows traffic to pass through the server; `MASQUERADE` does NAT so client traffic appears to come from the server's IP on `eth0`
+- `PostDown` — removes those rules when the interface goes down
+
+Restrict permissions on the config file:
+
+```bash
+sudo chmod 600 /etc/wireguard/wg0.conf
+```
+
+## Enable IP Forwarding
+
+By default, Linux doesn't forward packets between interfaces. Enable it so the server can route VPN traffic to the internet:
+
+```bash
+sudo nano /etc/sysctl.conf
+```
+
+Uncomment or add:
+
+```
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=1
+```
+
+Apply without rebooting:
+
+```bash
+sudo sysctl -p
+```
+
+## Start the WireGuard Interface
+
+```bash
 sudo wg-quick up wg0
-```
-
-Para a ligação VPN começar na inicialização do sistema o comando é o seguinte.
-``` bash
 sudo systemctl enable wg-quick@wg0
 ```
-E voilá temos o nosso próprio servidor VPN de maneira bastante simples.
 
+Confirm it's running:
 
+```bash
+sudo wg show
+```
+
+You should see the `wg0` interface with the listen port and no peers yet.
+
+## Generate the Client Keys
+
+On the client machine:
+
+```bash
+wg genkey | sudo tee /etc/wireguard/client_private.key | wg pubkey | sudo tee /etc/wireguard/client_public.key
+sudo chmod 600 /etc/wireguard/client_private.key
+```
+
+Note both values — the private key goes into the client config, the public key gets added as a peer on the server.
+
+## Add the Client as a Peer on the Server
+
+On the server, add a `[Peer]` block to `/etc/wireguard/wg0.conf`:
+
+```ini
+[Peer]
+PublicKey = <client_public_key>
+AllowedIPs = 10.66.66.2/32
+```
+
+- `PublicKey` — the client's public key
+- `AllowedIPs` — the IP assigned to this client inside the tunnel. `/32` means only that exact IP routes to this peer
+
+Restart the interface to apply:
+
+```bash
+sudo wg-quick down wg0 && sudo wg-quick up wg0
+```
+
+## Configure the Client
+
+Install WireGuard:
+
+```bash
+sudo apt install wireguard
+```
+
+Create the client config:
+
+```bash
+sudo nano /etc/wireguard/wg0.conf
+```
+
+```ini
+[Interface]
+PrivateKey = <client_private_key>
+Address = 10.66.66.2/32
+DNS = 1.1.1.1
+
+[Peer]
+PublicKey = <server_public_key>
+Endpoint = <server_public_ip>:51820
+AllowedIPs = 0.0.0.0/0,::/0
+PersistentKeepalive = 25
+```
+
+- `Address` — the client's tunnel IP, matching what you set in `AllowedIPs` on the server
+- `DNS` — DNS server to use while connected
+- `Endpoint` — the server's public IP and WireGuard port
+- `AllowedIPs = 0.0.0.0/0,::/0` — routes all traffic through the VPN. To route only the VPN subnet, use `10.66.66.0/24` instead
+- `PersistentKeepalive = 25` — sends a keepalive every 25 seconds, useful when the client is behind NAT
+
+Bring the tunnel up:
+
+```bash
+sudo wg-quick up wg0
+sudo systemctl enable wg-quick@wg0
+```
+
+## Verify the Connection
+
+On the client:
+
+```bash
+sudo wg show
+```
+
+You should see the server listed as a peer with a recent handshake and traffic counters. Confirm your public IP changed:
+
+```bash
+curl ifconfig.me
+```
+
+It should return the server's IP.
+
+## Adding More Clients
+
+Each additional client follows the same process: generate a keypair, add a `[Peer]` block on the server with a unique `AllowedIPs` (`10.66.66.3/32`, `10.66.66.4/32`, etc.), and create a matching config on the client.

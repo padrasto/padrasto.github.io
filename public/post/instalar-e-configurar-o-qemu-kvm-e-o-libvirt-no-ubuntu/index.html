@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
     <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="\nInstalar e configurar o QEMU-KVM e o Libvirt no Ubuntu O QEMU-KVM e o libvirt são duas ferramentas importantes para virtualização no Linux. O QEMU-KVM é uma plataforma de virtualização de código aberto que permite emular várias arquiteturas de CPU, incluindo Intel e ARM, e executar sistemas operacionais convidados em máquinas virtuais. O libvirt é uma API de gerenciamento de virtualização que fornece uma camada abstrata para interagir com diferentes hypervisors, incluindo QEMU-KVM. Juntos, eles fornecem uma solução robusta e escalável para virtualização em ambientes Linux. Neste tutorial, vamos explorar como instalar e configurar o QEMU-KVM e o libvirt no Ubuntu.\n">
-<title>Instalação do KVM no Linux Ubuntu</title>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="KVM, QEMU, and libvirt are three separate pieces that work together to provide virtualisation on Linux. Understanding what each one does makes the setup easier to reason about.\nKVM (Kernel-based Virtual Machine) is a Linux kernel module that turns the kernel itself into a hypervisor. It uses the CPU&rsquo;s hardware virtualisation extensions (Intel VT-x or AMD-V) to run virtual machines at near-native speed. KVM alone is just a kernel interface — it doesn&rsquo;t handle disk images, networking, or device emulation.\n">
+<title>Installing and Configuring QEMU-KVM and libvirt on Ubuntu</title>
 
 
 <link rel="canonical" href="http://localhost:1313/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/">
@@ -12,13 +12,13 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap">
 
 
-<link rel="stylesheet" href="/scss/style.min.389e156f5e9bb13df5a924cfa99dfb9c39f3e01e68d9e146cd65bdae963be145.css"><meta property='og:title' content="Instalação do KVM no Linux Ubuntu">
-<meta property='og:description' content="\nInstalar e configurar o QEMU-KVM e o Libvirt no Ubuntu O QEMU-KVM e o libvirt são duas ferramentas importantes para virtualização no Linux. O QEMU-KVM é uma plataforma de virtualização de código aberto que permite emular várias arquiteturas de CPU, incluindo Intel e ARM, e executar sistemas operacionais convidados em máquinas virtuais. O libvirt é uma API de gerenciamento de virtualização que fornece uma camada abstrata para interagir com diferentes hypervisors, incluindo QEMU-KVM. Juntos, eles fornecem uma solução robusta e escalável para virtualização em ambientes Linux. Neste tutorial, vamos explorar como instalar e configurar o QEMU-KVM e o libvirt no Ubuntu.\n">
+<link rel="stylesheet" href="/scss/style.min.389e156f5e9bb13df5a924cfa99dfb9c39f3e01e68d9e146cd65bdae963be145.css"><meta property='og:title' content="Installing and Configuring QEMU-KVM and libvirt on Ubuntu">
+<meta property='og:description' content="KVM, QEMU, and libvirt are three separate pieces that work together to provide virtualisation on Linux. Understanding what each one does makes the setup easier to reason about.\nKVM (Kernel-based Virtual Machine) is a Linux kernel module that turns the kernel itself into a hypervisor. It uses the CPU&rsquo;s hardware virtualisation extensions (Intel VT-x or AMD-V) to run virtual machines at near-native speed. KVM alone is just a kernel interface — it doesn&rsquo;t handle disk images, networking, or device emulation.\n">
 <meta property='og:url' content='http://localhost:1313/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/'>
 <meta property='og:site_name' content='Padrasto&#39;s Linux Lab'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='kvm' /><meta property='article:published_time' content='2023-03-09T21:10:00&#43;08:00'/><meta property='article:modified_time' content='2023-03-09T21:10:00&#43;08:00'/>
-<meta name="twitter:title" content="Instalação do KVM no Linux Ubuntu">
-<meta name="twitter:description" content="\nInstalar e configurar o QEMU-KVM e o Libvirt no Ubuntu O QEMU-KVM e o libvirt são duas ferramentas importantes para virtualização no Linux. O QEMU-KVM é uma plataforma de virtualização de código aberto que permite emular várias arquiteturas de CPU, incluindo Intel e ARM, e executar sistemas operacionais convidados em máquinas virtuais. O libvirt é uma API de gerenciamento de virtualização que fornece uma camada abstrata para interagir com diferentes hypervisors, incluindo QEMU-KVM. Juntos, eles fornecem uma solução robusta e escalável para virtualização em ambientes Linux. Neste tutorial, vamos explorar como instalar e configurar o QEMU-KVM e o libvirt no Ubuntu.\n">
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='kvm' /><meta property='article:tag' content='qemu' /><meta property='article:tag' content='libvirt' /><meta property='article:tag' content='virtualisation' /><meta property='article:tag' content='ubuntu' /><meta property='article:tag' content='sysadmin' /><meta property='article:published_time' content='2023-03-09T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2023-03-09T00:00:00&#43;00:00'/>
+<meta name="twitter:title" content="Installing and Configuring QEMU-KVM and libvirt on Ubuntu">
+<meta name="twitter:description" content="KVM, QEMU, and libvirt are three separate pieces that work together to provide virtualisation on Linux. Understanding what each one does makes the setup easier to reason about.\nKVM (Kernel-based Virtual Machine) is a Linux kernel module that turns the kernel itself into a hypervisor. It uses the CPU&rsquo;s hardware virtualisation extensions (Intel VT-x or AMD-V) to run virtual machines at near-native speed. KVM alone is just a kernel interface — it doesn&rsquo;t handle disk images, networking, or device emulation.\n">
     </head>
     <body class="
     article-page
@@ -150,6 +150,23 @@
             </a>
         </li>
         
+        
+        <li >
+            <a href='/page/about/' >
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>About</span>
+            </a>
+        </li>
+        
         <li class="menu-bottom-section">
             <ol class="menu">
 
@@ -202,7 +219,11 @@
             <nav class="toc-nav" id="TableOfContents">
                 
   <ul>
-    <li><a href="#instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu">Instalar e configurar o QEMU-KVM e o Libvirt no Ubuntu</a></li>
+    <li><a href="#check-hardware-support">Check Hardware Support</a></li>
+    <li><a href="#install-the-required-packages">Install the Required Packages</a></li>
+    <li><a href="#add-your-user-to-the-required-groups">Add Your User to the Required Groups</a></li>
+    <li><a href="#apply-the-changes">Apply the Changes</a></li>
+    <li><a href="#verify-the-installation">Verify the Installation</a></li>
   </ul>
 
             </nav>
@@ -241,7 +262,7 @@
 
     <div class="article-title-wrapper">
         <h2 class="article-title">
-            <a href="/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/">Instalação do KVM no Linux Ubuntu</a>
+            <a href="/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/">Installing and Configuring QEMU-KVM and libvirt on Ubuntu</a>
         </h2>
     
         
@@ -267,7 +288,7 @@
   <path d="M3 11h16" />
   <path d="M18 16.496v1.504l1 1" />
 </svg>
-                    <time class="article-time--published" datetime='2023-03-09T21:10:00&#43;08:00'>Thursday, March 9, 2023</time>
+                    <time class="article-time--published" datetime='2023-03-09T00:00:00Z'>Thursday, March 9, 2023</time>
                 
 
                 
@@ -280,7 +301,7 @@
 
 
                     <time class="article-time--reading">
-                        1 minute read
+                        3 minutes read
                     </time>
                 
             </div>
@@ -307,7 +328,11 @@
             <nav class="toc-nav">
                 
   <ul>
-    <li><a href="#instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu">Instalar e configurar o QEMU-KVM e o Libvirt no Ubuntu</a></li>
+    <li><a href="#check-hardware-support">Check Hardware Support</a></li>
+    <li><a href="#install-the-required-packages">Install the Required Packages</a></li>
+    <li><a href="#add-your-user-to-the-required-groups">Add Your User to the Required Groups</a></li>
+    <li><a href="#apply-the-changes">Apply the Changes</a></li>
+    <li><a href="#verify-the-installation">Verify the Installation</a></li>
   </ul>
 
             </nav>
@@ -318,18 +343,47 @@
     <section class="article-content">
     
     
-    <p><img alt="image" loading="lazy" sizes="(max-width: 767px) calc(100vw - 30px), (max-width: 1023px) 700px, (max-width: 1279px) 950px, 1232px"></p>
-<h2 id="instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu">Instalar e configurar o QEMU-KVM e o Libvirt no Ubuntu
-</h2><p>O QEMU-KVM e o libvirt são duas ferramentas importantes para virtualização no Linux. O QEMU-KVM é uma plataforma de virtualização de código aberto que permite emular várias arquiteturas de CPU, incluindo Intel e ARM, e executar sistemas operacionais convidados em máquinas virtuais. O libvirt é uma API de gerenciamento de virtualização que fornece uma camada abstrata para interagir com diferentes hypervisors, incluindo QEMU-KVM. Juntos, eles fornecem uma solução robusta e escalável para virtualização em ambientes Linux. Neste tutorial, vamos explorar como instalar e configurar o QEMU-KVM e o libvirt no Ubuntu.</p>
-<p>Instalação do software necessário</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo apt install qemu-kvm libvirt-clients libvirt-daemon-system bridge-utils libguestfs-tools genisoimage virtinst libosinfo-bin virt-manager dnsmasq
-</span></span></code></pre></div><p>Adicionar o utilizador aos Grupos KVM</p>
+    <p>KVM, QEMU, and libvirt are three separate pieces that work together to provide virtualisation on Linux. Understanding what each one does makes the setup easier to reason about.</p>
+<p><strong>KVM</strong> (Kernel-based Virtual Machine) is a Linux kernel module that turns the kernel itself into a hypervisor. It uses the CPU&rsquo;s hardware virtualisation extensions (Intel VT-x or AMD-V) to run virtual machines at near-native speed. KVM alone is just a kernel interface — it doesn&rsquo;t handle disk images, networking, or device emulation.</p>
+<p><strong>QEMU</strong> fills that gap. It emulates hardware — CPU, RAM, disk controllers, network cards — and when paired with KVM, delegates the CPU-intensive work to the kernel module. The result is fast, hardware-accelerated virtualisation with full device emulation.</p>
+<p><strong>libvirt</strong> sits on top of both. It&rsquo;s a management API and daemon (<code>libvirtd</code>) that provides a consistent interface for creating, starting, stopping, and configuring VMs — regardless of the underlying hypervisor. Tools like <code>virt-manager</code> (GUI) and <code>virsh</code> (CLI) talk to libvirt, not directly to QEMU or KVM.</p>
+<h2 id="check-hardware-support">Check Hardware Support
+</h2><p>Before installing, confirm your CPU supports hardware virtualisation:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>egrep -c <span style="color:#e6db74">&#39;(vmx|svm)&#39;</span> /proc/cpuinfo
+</span></span></code></pre></div><p>A result of <code>1</code> or more means you&rsquo;re good. <code>vmx</code> is Intel VT-x, <code>svm</code> is AMD-V. If the result is <code>0</code>, KVM won&rsquo;t work — you&rsquo;d need to enable virtualisation in the BIOS/UEFI.</p>
+<h2 id="install-the-required-packages">Install the Required Packages
+</h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo apt install qemu-kvm libvirt-clients libvirt-daemon-system bridge-utils libguestfs-tools genisoimage virtinst libosinfo-bin virt-manager dnsmasq
+</span></span></code></pre></div><p>What each package does:</p>
+<ul>
+<li><code>qemu-kvm</code> — the QEMU emulator with KVM support</li>
+<li><code>libvirt-daemon-system</code> — the libvirt daemon and system integration</li>
+<li><code>libvirt-clients</code> — command-line tools including <code>virsh</code></li>
+<li><code>bridge-utils</code> — tools for managing network bridges (needed for VM networking)</li>
+<li><code>libguestfs-tools</code> — utilities for accessing and modifying VM disk images</li>
+<li><code>genisoimage</code> — creates ISO images (useful for cloud-init and VM provisioning)</li>
+<li><code>virtinst</code> — the <code>virt-install</code> command for creating VMs from the CLI</li>
+<li><code>libosinfo-bin</code> — OS information database, used by virt-manager to auto-configure VMs</li>
+<li><code>virt-manager</code> — graphical interface for managing VMs</li>
+<li><code>dnsmasq</code> — provides DHCP and DNS for the default NAT network</li>
+</ul>
+<h2 id="add-your-user-to-the-required-groups">Add Your User to the Required Groups
+</h2><p>Add yourself to the <code>libvirt</code> group to manage VMs without root:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo adduser $USER libvirt
 </span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo adduser $USER libvirt-qemu
-</span></span></code></pre></div><p>Editrar as permições de forma a usar o software com o nosso utilizador sem previlégios de root.</p>
+</span></span></code></pre></div><p>The <code>libvirt-qemu</code> group gives your user permission to access QEMU processes managed by libvirt. Without it, you may get permission denied errors when starting VMs.</p>
+<p>Add yourself to the <code>kvm</code> group for direct KVM device access:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo addgroup <span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span> libvirt
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo addgroup <span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span> kvm
-</span></span></code></pre></div><p>Agora é necessário reenicar o nosso sistema operativo para que as mudanças surtam efeito.</p>
+</span></span><span style="display:flex;"><span>sudo addgroup <span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span> kvm
+</span></span></code></pre></div><p>The <code>/dev/kvm</code> device is what allows processes to use hardware virtualisation. Members of the <code>kvm</code> group can access it without root.</p>
+<h2 id="apply-the-changes">Apply the Changes
+</h2><p>Reboot for the group memberships to take effect:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo reboot
+</span></span></code></pre></div><h2 id="verify-the-installation">Verify the Installation
+</h2><p>After rebooting, confirm libvirt is running:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl status libvirtd
+</span></span></code></pre></div><p>Check that your user can interact with libvirt without sudo:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh list --all
+</span></span></code></pre></div><p>If it returns an empty list with no errors, the setup is correct. Open <code>virt-manager</code> from your application menu to create and manage VMs graphically.</p>
 
 </section>
 
@@ -339,6 +393,16 @@
     <section class="article-tags">
         
             <a href="/tags/kvm/">Kvm</a>
+        
+            <a href="/tags/qemu/">Qemu</a>
+        
+            <a href="/tags/libvirt/">Libvirt</a>
+        
+            <a href="/tags/virtualisation/">Virtualisation</a>
+        
+            <a href="/tags/ubuntu/">Ubuntu</a>
+        
+            <a href="/tags/sysadmin/">Sysadmin</a>
         
     </section>
 
@@ -352,6 +416,48 @@
     
 
     
+
+<aside>
+    <h2 class="section-title">Related content</h2>
+    <div class="subsection-list">
+        <div class="article-list--tile">
+            
+                
+<article class="">
+    <a href="/post/wireguard-no-ubuntu/">
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Setting Up a WireGuard VPN Server on Ubuntu</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/post/kali-docker/">
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kali Linux in Docker with Xfce and RDP Access</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/post/wireshark/">
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Running Wireshark Without Root on Linux</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
 
      
     
