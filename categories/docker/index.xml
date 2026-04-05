@@ -1,42 +1,55 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on Padrasto's Linux Lab</title><link>https://padrasto.github.io/categories/docker/</link><description>Recent content in Docker on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 28 Feb 2023 23:10:00 +0800</lastBuildDate><atom:link href="https://padrasto.github.io/categories/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>Kali Linux no Docker com Xfce</title><link>https://padrasto.github.io/post/kali-docker/</link><pubDate>Tue, 28 Feb 2023 23:10:00 +0800</pubDate><guid>https://padrasto.github.io/post/kali-docker/</guid><description>&lt;p&gt;&lt;img alt="image" class="gallery-image" data-flex-basis="674px" data-flex-grow="280" height="284" loading="lazy" sizes="(max-width: 767px) calc(100vw - 30px), (max-width: 1023px) 700px, (max-width: 1279px) 950px, 1232px" src="https://www.kali.org/blog/official-kali-linux-docker-images/images/kali-linux-docker-images.jpg" width="798"&gt;&lt;/p&gt;
-&lt;h2 id="instalação-do-kali-linux-com-interface-gráfica-usando-o-docker"&gt;Instalação do Kali Linux com interface gráfica usando o Docker
-&lt;/h2&gt;&lt;p&gt;Usar o docker para correr o Kali Linux pode parecer descabido á partida mas tem as suas vantagens.
-Uma das pricipais é a rapidez do docker em relação a máquinas virtuais.&lt;/p&gt;
-&lt;p&gt;Tomemos como exemplo o seguinte senário, necessitamos de uma máquina Kali para usar uma ferramenta específica como por exemplo o nmap.&lt;/p&gt;
-&lt;p&gt;Vejamos como é simples usar o docker para esse fim. Para tal só necessitamos de uns segundos e quase nenhum espaço de armazenamento na nossa máquina anfitriã. Vamos então para um exemplo prático.
-Obtemos a imagem oficial do Kali-Linux com o seguinte comando.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on Padrasto's Linux Lab</title><link>https://padrasto.github.io/categories/docker/</link><description>Recent content in Docker on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 28 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/categories/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>Kali Linux in Docker with Xfce and RDP Access</title><link>https://padrasto.github.io/post/kali-docker/</link><pubDate>Tue, 28 Feb 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/kali-docker/</guid><description>&lt;p&gt;Running Kali Linux inside Docker might seem like an odd choice at first, but it has real advantages. The main one is speed — Docker containers start in seconds, compared to the boot time of a full virtual machine. There&amp;rsquo;s also the storage benefit: the base Kali image is minimal, and you only install what you actually need.&lt;/p&gt;
+&lt;p&gt;A typical use case: you need to run a specific tool like &lt;code&gt;nmap&lt;/code&gt; or &lt;code&gt;nikto&lt;/code&gt;, you don&amp;rsquo;t want to keep a full VM around just for that, and you want to be up and running in under a minute.&lt;/p&gt;
+&lt;h2 id="running-kali-from-the-base-image"&gt;Running Kali from the Base Image
+&lt;/h2&gt;&lt;p&gt;Pull the official Kali rolling image:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker pull kalilinux/kali-rolling
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Em poucos segundos temos uma imagem base do Kali-Linux que por defeito não vem com nenhuma ferramenta instalada. Agora veremos como utilizar essa mesma imagem.&lt;/p&gt;
-&lt;p&gt;Listamos as imagens disponivéis na nossa máquina da seguinte forma.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The base image comes with no tools installed by default. That&amp;rsquo;s intentional — you build on top of it with only what you need.&lt;/p&gt;
+&lt;p&gt;List your local images to confirm it&amp;rsquo;s there:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker images
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;De seguida criamos um contentor com a imagem base do Kali-Linux.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Start an interactive container:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker run -it kalilinux/kali-rolling
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Isto irá gerar uma imagem base do Kali-linux e o parâmetro -it é para podermos ter interação com o contentor que acabamos de criar. Ou seja somos imediatamente e após a criação do contentor para o terminal do kali-linux onde podemos instalar as nossas ferramentas, neste caso o nmap.
-Vamos então proceder á instalação.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;-it&lt;/code&gt; flags attach your terminal to the container (&lt;code&gt;-i&lt;/code&gt; keeps stdin open, &lt;code&gt;-t&lt;/code&gt; allocates a pseudo-TTY). You&amp;rsquo;ll land directly in a Kali shell.&lt;/p&gt;
+&lt;p&gt;From here, install whatever tools you need. For example:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;apt update &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt install nmap
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Em poucos segundos temos a nossa máquina Kali-Linux a rodar dentro do docker e o nmap instalado.
-Podemos instalar todo o tipo de ferramentas como por exemplo&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or the full top 10 Kali tools metapackage:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;apt install kali-tools-top10
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;O único problema é que quando saimos desse mesmo terminal o contentor que acabamos de criar desaparece e voltamos á imagem base. Para contronar esse obstáculo podemos fazer um &amp;ldquo;commit&amp;rdquo; do contentor anteriormente criado. Para isso é só abrir outra janela no terminal e digitar o seguite.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker ps 
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Para listar os contentores disponivéis e em seguida,&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker commit &lt;span style="color:#e6db74"&gt;&amp;#34; ID do Contentor&amp;#34;&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;#34;e o nome que queremos para a mnova imagem&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Exemplo;&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker commit 0c448678d82d novaimagem
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Assim geramos uma imagem já com as ferramentas que necessitamos para que da próxima vez já não tenhamos que partir da imagem base. Agora se desejarmos usar essa imagemé só digitar o seguinte.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker run -it novaimagem
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="instalar-o-ambiente-gráfico-xfce-e-fazer-acesso-através-do-protocolo-rdp"&gt;Instalar o ambiente gráfico xfce e fazer acesso através do protocolo RDP
-&lt;/h2&gt;&lt;p&gt;Criamos o nosso contentor,instalamos a interface gráfica xfce, algumas ferramentas e defeniremos uma senha para o utilizador root.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker run -it -p 3389:3389 --name kali-Teste kalilinux/kali-rolling
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;O parâmetro -it é para interagir com o contentor, o parâmetro -p é a porta que iremos utilizar, o parâmetro &amp;ndash;name é o nome que queremos dar a este contentor e neste caso (kalilinux/kali-rolling) é a imagem base que iremos utilizar neste caso a imagem base.&lt;/p&gt;
-&lt;p&gt;Instalamos a interface gráfica xfce e o pacote (xrdp) que nos irá permitir fazer o acesso remoto a este contentor.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;apt install kali-desktop-xfce xrdp 
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Defenimos uma senha para o utilizador root.&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="saving-your-work-with-docker-commit"&gt;Saving Your Work with docker commit
+&lt;/h2&gt;&lt;p&gt;The problem with &lt;code&gt;docker run&lt;/code&gt; is that when you exit the container, any changes you made are gone. The container is destroyed and you&amp;rsquo;re back to the base image.&lt;/p&gt;
+&lt;p&gt;To preserve your installed tools, commit the container as a new image. While the container is running, open a second terminal and find its ID:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker ps
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Then commit it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker commit &amp;lt;container_id&amp;gt; &amp;lt;new_image_name&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Example:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker commit 0c448678d82d kali-custom
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Next time, start from your saved image instead of the base:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker run -it kali-custom
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Your tools will be there, no reinstallation needed.&lt;/p&gt;
+&lt;h2 id="adding-a-gui-with-xfce-and-rdp"&gt;Adding a GUI with Xfce and RDP
+&lt;/h2&gt;&lt;p&gt;For a full graphical environment, you can install Xfce inside the container and access it remotely via RDP. This is useful when you need a desktop interface for tools that don&amp;rsquo;t work well on the command line.&lt;/p&gt;
+&lt;p&gt;Start a new container with port 3389 forwarded (standard RDP port):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker run -it -p 3389:3389 --name kali-desktop kalilinux/kali-rolling
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Flag breakdown:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;-it&lt;/code&gt; — interactive terminal&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-p 3389:3389&lt;/code&gt; — maps port 3389 on the host to port 3389 in the container&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--name kali-desktop&lt;/code&gt; — gives the container a readable name instead of a random hash&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Install the Xfce desktop and the xrdp server:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;apt install kali-desktop-xfce xrdp
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Set a password for the root user:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;passwd root
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;E iniciamos o serviço (xrdp).&lt;/p&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Start the xrdp service:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;service xrdp start
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Agora com um cliente RDP como o (Remmina) é só conectar ao contentor usando a seguinte informação.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;localhost:3389
-&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;Utilizador&lt;span style="color:#f92672"&gt;=&lt;/span&gt; root
-&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;Password a que defenimos.
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;E voilá temos o nosso Kali-Linux com o xfce a rodar perfeitamente no docker. Agora é so fazer um &amp;ldquo;commit&amp;rdquo; do contentor e temos uma imagem sempre pronta com interface gráfica.&lt;/p&gt;</description></item></channel></rss>
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now open any RDP client — Remmina works well on Linux — and connect to:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Host: localhost:3389
+Username: root
+Password: (the one you set above)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You&amp;rsquo;ll get a full Xfce desktop running inside the container.&lt;/p&gt;
+&lt;p&gt;When you&amp;rsquo;re done, commit this container as well so your desktop setup is preserved:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker commit kali-desktop kali-desktop-saved
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="notes"&gt;Notes
+&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;The base image has no tools, which keeps it small. Install only what you need for each use case.&lt;/li&gt;
+&lt;li&gt;For persistent work across sessions, &lt;code&gt;docker commit&lt;/code&gt; is the quick approach. For something more structured, a &lt;code&gt;Dockerfile&lt;/code&gt; is cleaner — but that&amp;rsquo;s a separate topic.&lt;/li&gt;
+&lt;li&gt;Running as root inside the container is fine for a local lab setup, but keep in mind that the container shares the host kernel.&lt;/li&gt;
+&lt;/ul&gt;</description></item></channel></rss>

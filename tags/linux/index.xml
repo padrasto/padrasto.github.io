@@ -475,4 +475,216 @@ tmpfs 4096 0 4096 0% /dev/shm
 &lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl reload nginx &lt;span style="color:#75715e"&gt;# reload config (no interruption)&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl status nginx &lt;span style="color:#75715e"&gt;# current status&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nginx -t &lt;span style="color:#75715e"&gt;# test configuration&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;</description></item></channel></rss>
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;</description></item><item><title>Installing Proxmox on a Laptop — Full Disk, Lid Closed, Screen Off</title><link>https://padrasto.github.io/post/proxmox-laptop/</link><pubDate>Wed, 19 Jul 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/proxmox-laptop/</guid><description>&lt;p&gt;Proxmox VE is an open-source virtualisation platform that combines KVM-based virtual machines and LXC containers under a single web interface. It&amp;rsquo;s typically deployed on dedicated server hardware, but a laptop makes a perfectly capable homelab node — especially if it&amp;rsquo;s sitting unused. It has a built-in UPS (the battery), a screen for local access, and low idle power consumption compared to a tower.&lt;/p&gt;
+&lt;p&gt;Installing on a laptop introduces two problems the standard Proxmox documentation doesn&amp;rsquo;t address well: the default partitioning wastes most of the disk, and closing the lid suspends the machine. This article covers both, along with the full installation process.&lt;/p&gt;
+&lt;h2 id="what-proxmox-installs"&gt;What Proxmox Installs
+&lt;/h2&gt;&lt;p&gt;Proxmox runs on Debian and uses LVM (Logical Volume Manager) to manage storage. The default installer creates three logical volumes on a volume group called &lt;code&gt;pve&lt;/code&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;pve/root&lt;/code&gt; — the root filesystem for the Proxmox OS (around 96GB by default regardless of disk size)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;pve/swap&lt;/code&gt; — swap space&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;pve/data&lt;/code&gt; — a thin-provisioned LVM pool intended for VM disk images&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The problem is that &lt;code&gt;pve/data&lt;/code&gt; is not directly usable as a standard filesystem — it&amp;rsquo;s a thin pool, designed for LVM thin provisioning. The Proxmox web UI uses it through the &lt;code&gt;local-lvm&lt;/code&gt; storage definition. On a laptop with a single disk, this setup leaves the &lt;code&gt;local&lt;/code&gt; storage (which maps to &lt;code&gt;/var/lib/vz&lt;/code&gt; on &lt;code&gt;pve/root&lt;/code&gt;) severely limited, and the split between &lt;code&gt;local&lt;/code&gt; and &lt;code&gt;local-lvm&lt;/code&gt; adds unnecessary complexity for a single-node homelab.&lt;/p&gt;
+&lt;p&gt;The solution is to remove &lt;code&gt;pve/data&lt;/code&gt;, reclaim that space into &lt;code&gt;pve/root&lt;/code&gt;, and use only the &lt;code&gt;local&lt;/code&gt; storage for everything — ISOs, VM disks, backups, and container templates.&lt;/p&gt;
+&lt;h2 id="installation"&gt;Installation
+&lt;/h2&gt;&lt;p&gt;Download the Proxmox VE ISO from &lt;a class="link" href="https://www.proxmox.com/en/downloads" target="_blank" rel="noopener"
+ &gt;proxmox.com/downloads&lt;/a&gt; and write it to a USB drive:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo dd &lt;span style="color:#66d9ef"&gt;if&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;proxmox-ve_*.iso of&lt;span style="color:#f92672"&gt;=&lt;/span&gt;/dev/sdX bs&lt;span style="color:#f92672"&gt;=&lt;/span&gt;4M status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;progress
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Replace &lt;code&gt;/dev/sdX&lt;/code&gt; with your USB device. Boot from the USB and follow the graphical installer. During installation:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Set a static IP address for the management interface — you&amp;rsquo;ll need it to access the web UI&lt;/li&gt;
+&lt;li&gt;Set the hostname to something meaningful (&lt;code&gt;proxmox.local&lt;/code&gt; works fine for a homelab)&lt;/li&gt;
+&lt;li&gt;The disk partitioning is automatic — don&amp;rsquo;t worry about it now, you&amp;rsquo;ll fix it after boot&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;After installation, access the web UI from another machine at &lt;code&gt;https://&amp;lt;proxmox_ip&amp;gt;:8006&lt;/code&gt;. Ignore the SSL certificate warning — Proxmox uses a self-signed certificate by default.&lt;/p&gt;
+&lt;h2 id="reclaiming-disk-space"&gt;Reclaiming Disk Space
+&lt;/h2&gt;&lt;p&gt;After the first login, open the Proxmox shell (Node → Shell in the web UI, or SSH into the machine) and run the following three commands.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Remove the thin-pool volume:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;lvremove /dev/pve/data
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Type &lt;code&gt;y&lt;/code&gt; to confirm. This removes the LVM thin pool. No data is lost because the machine is freshly installed.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Expand the root volume to use all freed space:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;lvresize -l +100%FREE /dev/pve/root
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This grows the &lt;code&gt;pve/root&lt;/code&gt; logical volume to consume all the space that was occupied by &lt;code&gt;pve/data&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Resize the filesystem to match the new volume size:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;resize2fs /dev/mapper/pve-root
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;LVM operates at the block level — resizing the logical volume doesn&amp;rsquo;t automatically resize the filesystem inside it. &lt;code&gt;resize2fs&lt;/code&gt; extends the ext4 filesystem to fill the newly available space.&lt;/p&gt;
+&lt;p&gt;Verify the result:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;df -h /
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The root filesystem should now reflect the full available disk space.&lt;/p&gt;
+&lt;h2 id="remove-local-lvm-from-the-web-ui"&gt;Remove local-lvm from the Web UI
+&lt;/h2&gt;&lt;p&gt;The &lt;code&gt;local-lvm&lt;/code&gt; storage definition in the Proxmox UI still points to the volume you just removed. Go to &lt;strong&gt;Datacenter → Storage&lt;/strong&gt;, select &lt;code&gt;local-lvm&lt;/code&gt;, and click &lt;strong&gt;Remove&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Then edit the &lt;code&gt;local&lt;/code&gt; storage: select it, click &lt;strong&gt;Edit&lt;/strong&gt;, and make sure &lt;strong&gt;Content&lt;/strong&gt; includes all types — Disk image, Container, ISO image, Container template, Snippets, Backup. This allows &lt;code&gt;local&lt;/code&gt; to handle everything that &lt;code&gt;local-lvm&lt;/code&gt; previously handled.&lt;/p&gt;
+&lt;h2 id="disable-lid-suspend"&gt;Disable Lid Suspend
+&lt;/h2&gt;&lt;p&gt;By default, closing the laptop lid triggers a suspend event managed by &lt;code&gt;systemd-logind&lt;/code&gt;. On a server, this is the last thing you want.&lt;/p&gt;
+&lt;p&gt;Edit the logind configuration:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nano /etc/systemd/logind.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Find and set (or uncomment) these two lines:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;HandleLidSwitch=ignore
+HandleLidSwitchDocked=ignore
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;HandleLidSwitch&lt;/code&gt; controls what happens when the lid is closed on battery or AC power. &lt;code&gt;HandleLidSwitchDocked&lt;/code&gt; controls the behaviour when connected to a docking station. Setting both to &lt;code&gt;ignore&lt;/code&gt; ensures the machine stays running regardless.&lt;/p&gt;
+&lt;p&gt;Restart the service for the change to take effect:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;systemctl restart systemd-logind.service
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Test it by closing the lid — the machine should remain accessible over the network.&lt;/p&gt;
+&lt;h2 id="turn-off-the-screen-automatically"&gt;Turn Off the Screen Automatically
+&lt;/h2&gt;&lt;p&gt;With the lid closed and suspend disabled, the screen stays on indefinitely, wasting power. The &lt;code&gt;consoleblank&lt;/code&gt; kernel parameter blanks the console after a set number of seconds of inactivity.&lt;/p&gt;
+&lt;p&gt;Edit the GRUB configuration:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nano /etc/default/grub
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Find this line:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;GRUB_CMDLINE_LINUX=&amp;#34;&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Change it to:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;GRUB_CMDLINE_LINUX=&amp;#34;consoleblank=300&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;300&lt;/code&gt; is seconds — the screen will blank after 5 minutes of inactivity. Adjust to your preference.&lt;/p&gt;
+&lt;p&gt;Update GRUB to apply the change:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;update-grub
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Reboot for the kernel parameter to take effect:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;reboot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;After rebooting, the screen will blank after 5 minutes. The machine remains fully operational — SSH, web UI, and all running VMs continue unaffected.&lt;/p&gt;
+&lt;h2 id="verify-everything"&gt;Verify Everything
+&lt;/h2&gt;&lt;p&gt;Check disk usage:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;df -h
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;lsblk
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;lvdisplay
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check that &lt;code&gt;systemd-logind&lt;/code&gt; has the correct configuration loaded:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;systemctl show systemd-logind | grep -i lid
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check the active kernel parameters including &lt;code&gt;consoleblank&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;cat /proc/cmdline
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check Proxmox node status in the web UI — the storage panel should now show &lt;code&gt;local&lt;/code&gt; with the full available capacity.&lt;/p&gt;
+&lt;h2 id="network-access"&gt;Network Access
+&lt;/h2&gt;&lt;p&gt;The Proxmox web UI is always at &lt;code&gt;https://&amp;lt;ip&amp;gt;:8006&lt;/code&gt;. For SSH:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh root@&amp;lt;proxmox_ip&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Proxmox does not create a non-root user by default. For daily management, the web UI is the primary interface — SSH is for configuration and recovery tasks.&lt;/p&gt;
+&lt;h2 id="optional--static-ip-after-installation"&gt;Optional — Static IP After Installation
+&lt;/h2&gt;&lt;p&gt;If you need to change or set the IP after installation, edit the network interface file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nano /etc/network/interfaces
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;A typical static configuration:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;auto lo
+iface lo inet loopback
+
+auto vmbr0
+iface vmbr0 inet static
+ address 192.168.1.100/24
+ gateway 192.168.1.1
+ bridge-ports eth0
+ bridge-stp off
+ bridge-fd 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;vmbr0&lt;/code&gt; is the default Linux bridge Proxmox creates for VM networking. VMs attach to this bridge and share the physical network interface.&lt;/p&gt;
+&lt;p&gt;Restart networking:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;systemctl restart networking
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description></item><item><title>nmap — A Practical Guide for Sysadmins</title><link>https://padrasto.github.io/post/nmap/</link><pubDate>Mon, 13 Mar 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/nmap/</guid><description>&lt;p&gt;nmap (Network Mapper) is an open-source tool for network discovery and security auditing. It&amp;rsquo;s one of the most used tools in a sysadmin&amp;rsquo;s toolkit — not just for penetration testing, but for everyday tasks like checking which ports are open on a server, discovering hosts on a network, or verifying firewall rules are working as expected.&lt;/p&gt;
+&lt;p&gt;This article covers installation and the most useful scan types, with an explanation of what each one actually does under the hood.&lt;/p&gt;
+&lt;h2 id="installation"&gt;Installation
+&lt;/h2&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install nmap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Verify the installed version:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap --version
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="understanding-scan-types"&gt;Understanding Scan Types
+&lt;/h2&gt;&lt;p&gt;Before running scans, it&amp;rsquo;s worth understanding the two main methods nmap uses to probe ports.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;TCP Connect scan (&lt;code&gt;-sT&lt;/code&gt;)&lt;/strong&gt; — completes a full TCP three-way handshake (SYN → SYN-ACK → ACK). It&amp;rsquo;s reliable but noisy: the connection is fully logged by the target.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;SYN scan (&lt;code&gt;-sS&lt;/code&gt;)&lt;/strong&gt; — sends a SYN packet and waits for a response, but never completes the handshake. If the port is open, the target replies with SYN-ACK; nmap then sends RST to tear it down without establishing a connection. This is the default when run as root, and it&amp;rsquo;s faster and less likely to appear in application logs.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UDP scan (&lt;code&gt;-sU&lt;/code&gt;)&lt;/strong&gt; — scans UDP ports. Slower than TCP scans because UDP has no handshake — nmap has to wait for ICMP &amp;ldquo;port unreachable&amp;rdquo; responses or timeouts to determine port state.&lt;/p&gt;
+&lt;h2 id="basic-host-scan"&gt;Basic Host Scan
+&lt;/h2&gt;&lt;p&gt;Scan a single host for open ports:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;By default, nmap scans the 1,000 most commonly used TCP ports. Open ports, their state, and the service name are shown in the output.&lt;/p&gt;
+&lt;p&gt;Scan a specific port or range:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -p &lt;span style="color:#ae81ff"&gt;22&lt;/span&gt; 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -p 22,80,443 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -p 1-1024 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Scan all 65,535 ports:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -p- 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="host-discovery-on-a-network"&gt;Host Discovery on a Network
+&lt;/h2&gt;&lt;p&gt;Discover which hosts are up on a subnet without scanning their ports:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sn 192.168.1.0/24
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;-sn&lt;/code&gt; (previously &lt;code&gt;-sP&lt;/code&gt;) sends ICMP echo requests and ARP probes to each address in the range and reports which ones respond. Useful for mapping a network quickly.&lt;/p&gt;
+&lt;p&gt;To scan all discovered hosts and their ports in one command:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap 192.168.1.0/24
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="syn-scan"&gt;SYN Scan
+&lt;/h2&gt;&lt;p&gt;The default scan type when run as root. Faster and stealthier than a full TCP connect scan:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmap -sS 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="service-and-version-detection"&gt;Service and Version Detection
+&lt;/h2&gt;&lt;p&gt;Identify the software and version running on each open port:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sV 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;nmap sends probes to each open port and compares responses against its service fingerprint database. The output will show something like &lt;code&gt;OpenSSH 8.9p1&lt;/code&gt; or &lt;code&gt;nginx 1.18.0&lt;/code&gt; next to the port number.&lt;/p&gt;
+&lt;p&gt;Combine with &lt;code&gt;-p-&lt;/code&gt; to check all ports:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sV -p- 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="os-detection"&gt;OS Detection
+&lt;/h2&gt;&lt;p&gt;Attempt to identify the operating system of the target based on TCP/IP stack behaviour:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmap -O 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;nmap compares packet characteristics (TTL values, TCP window size, IP flags) against a fingerprint database. It works best when at least one open and one closed port are found. Results include a confidence percentage — treat them as educated guesses rather than certainties.&lt;/p&gt;
+&lt;h2 id="combining-options"&gt;Combining Options
+&lt;/h2&gt;&lt;p&gt;The most common all-in-one scan for a full picture of a host:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmap -sS -sV -O 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or use the aggressive scan flag, which enables OS detection, version detection, script scanning, and traceroute:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmap -A 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;-A&lt;/code&gt; is convenient but noisy — don&amp;rsquo;t use it on networks you don&amp;rsquo;t own or have explicit permission to test.&lt;/p&gt;
+&lt;h2 id="script-engine-nse"&gt;Script Engine (NSE)
+&lt;/h2&gt;&lt;p&gt;nmap includes a scripting engine (NSE) with hundreds of scripts for tasks ranging from service enumeration to vulnerability detection. Scripts are located in &lt;code&gt;/usr/share/nmap/scripts/&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Run scripts against a target:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap --script &amp;lt;script_name&amp;gt; 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run all scripts in the &lt;code&gt;vuln&lt;/code&gt; category to check for known vulnerabilities:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sV --script vuln 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check the default scripts (safe, non-intrusive):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sC 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;List available scripts by category:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ls /usr/share/nmap/scripts/ | grep smb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="output-formats"&gt;Output Formats
+&lt;/h2&gt;&lt;p&gt;Save scan results to a file. nmap supports several formats:&lt;/p&gt;
+&lt;p&gt;Normal text output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -oN scan.txt 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;XML output (useful for parsing with other tools):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -oX scan.xml 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Grepable format:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -oG scan.gnmap 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Save all three formats at once:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -oA scan 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This creates &lt;code&gt;scan.txt&lt;/code&gt;, &lt;code&gt;scan.xml&lt;/code&gt;, and &lt;code&gt;scan.gnmap&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id="timing-and-performance"&gt;Timing and Performance
+&lt;/h2&gt;&lt;p&gt;nmap has six timing templates (&lt;code&gt;-T0&lt;/code&gt; to &lt;code&gt;-T5&lt;/code&gt;) that control scan speed and aggressiveness:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;-T0&lt;/code&gt; / &lt;code&gt;-T1&lt;/code&gt; — very slow, designed to evade IDS detection&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-T2&lt;/code&gt; — slow&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-T3&lt;/code&gt; — default&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-T4&lt;/code&gt; — faster, recommended for local networks&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-T5&lt;/code&gt; — fastest, may miss results on congested networks&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -T4 192.168.1.0/24
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="a-note-on-permission"&gt;A Note on Permission
+&lt;/h2&gt;&lt;p&gt;nmap is a powerful tool. Always use it only on networks and systems you own or have explicit written permission to test. Running intrusive scans against systems you don&amp;rsquo;t control is illegal in most jurisdictions, regardless of intent.&lt;/p&gt;
+&lt;p&gt;For lab practice, set up a local VM — something like Metasploitable2 or a basic Ubuntu Server — and scan that instead.&lt;/p&gt;</description></item><item><title>Running Wireshark Without Root on Linux</title><link>https://padrasto.github.io/post/wireshark/</link><pubDate>Sun, 26 Feb 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/wireshark/</guid><description>&lt;p&gt;Most tutorials tell you to run &lt;code&gt;sudo wireshark&lt;/code&gt; and move on. That works, but it&amp;rsquo;s the wrong approach — you&amp;rsquo;re running a large, complex GUI application as root, which is an unnecessary security risk.&lt;/p&gt;
+&lt;p&gt;The correct solution is to run Wireshark as a normal user while giving only the packet capture component the privileges it actually needs.&lt;/p&gt;
+&lt;h2 id="why-wireshark-needs-special-permissions"&gt;Why Wireshark Needs Special Permissions
+&lt;/h2&gt;&lt;p&gt;Capturing raw network traffic requires access to network interfaces at a low level. On Linux, this is controlled by two kernel capabilities:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;cap_net_raw&lt;/code&gt;&lt;/strong&gt; — allows opening raw sockets and capturing packets&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;cap_net_admin&lt;/code&gt;&lt;/strong&gt; — allows configuring network interfaces&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;By default, only root has these. The goal is to grant them precisely — without touching the rest of the system.&lt;/p&gt;
+&lt;h2 id="the-role-of-dumpcap"&gt;The Role of dumpcap
+&lt;/h2&gt;&lt;p&gt;Wireshark uses a separation of privileges model. The GUI itself doesn&amp;rsquo;t capture packets — that job belongs to a small helper binary called &lt;code&gt;dumpcap&lt;/code&gt;. Only &lt;code&gt;dumpcap&lt;/code&gt; needs elevated capabilities. Wireshark reads the data &lt;code&gt;dumpcap&lt;/code&gt; provides and runs as a normal user.&lt;/p&gt;
+&lt;p&gt;This means you can give &lt;code&gt;dumpcap&lt;/code&gt; the minimum permissions it needs, and keep Wireshark itself completely unprivileged.&lt;/p&gt;
+&lt;h2 id="setup"&gt;Setup
+&lt;/h2&gt;&lt;p&gt;Install Wireshark:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install wireshark
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;During installation, it will ask: &lt;em&gt;&amp;ldquo;Should non-superusers be able to capture packets?&amp;rdquo;&lt;/em&gt; — select &lt;strong&gt;Yes&lt;/strong&gt;. If you already have it installed and skipped this step, reconfigure it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo dpkg-reconfigure wireshark-common
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Create the &lt;code&gt;wireshark&lt;/code&gt; group (if it doesn&amp;rsquo;t exist yet):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo groupadd wireshark
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Add your user to the group. Replace &lt;code&gt;user&lt;/code&gt; with your actual username:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo adduser user wireshark
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Set &lt;code&gt;dumpcap&lt;/code&gt; group ownership to &lt;code&gt;wireshark&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chgrp wireshark /usr/bin/dumpcap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Restrict execution to root and the &lt;code&gt;wireshark&lt;/code&gt; group:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod &lt;span style="color:#ae81ff"&gt;750&lt;/span&gt; /usr/bin/dumpcap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Grant &lt;code&gt;dumpcap&lt;/code&gt; the two capabilities it needs:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo setcap cap_net_raw,cap_net_admin&lt;span style="color:#f92672"&gt;=&lt;/span&gt;eip /usr/bin/dumpcap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Reboot for the group membership to take effect:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo reboot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="what-setcap-actually-does"&gt;What setcap Actually Does
+&lt;/h2&gt;&lt;p&gt;The &lt;code&gt;setcap&lt;/code&gt; command assigns Linux capabilities directly to a binary, without making it setuid root. The flag &lt;code&gt;=eip&lt;/code&gt; means the capabilities are set as &lt;strong&gt;Effective&lt;/strong&gt;, &lt;strong&gt;Inheritable&lt;/strong&gt;, and &lt;strong&gt;Permitted&lt;/strong&gt; — which is what &lt;code&gt;dumpcap&lt;/code&gt; needs to open raw sockets.&lt;/p&gt;
+&lt;p&gt;This is preferable to &lt;code&gt;setuid root&lt;/code&gt; because the privileges are scoped to exactly what the binary needs, and don&amp;rsquo;t escalate the entire process to root.&lt;/p&gt;
+&lt;h2 id="verify-it-works"&gt;Verify It Works
+&lt;/h2&gt;&lt;p&gt;After rebooting, open Wireshark as your normal user. You should see your network interfaces listed and be able to start a capture without any permission errors.&lt;/p&gt;
+&lt;p&gt;You can also confirm &lt;code&gt;dumpcap&lt;/code&gt; has the capabilities set:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;getcap /usr/bin/dumpcap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Expected output:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If it&amp;rsquo;s empty, repeat the &lt;code&gt;setcap&lt;/code&gt; command.&lt;/p&gt;</description></item></channel></rss>

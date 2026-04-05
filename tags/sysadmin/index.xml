@@ -475,4 +475,530 @@ tmpfs 4096 0 4096 0% /dev/shm
 &lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl reload nginx &lt;span style="color:#75715e"&gt;# reload config (no interruption)&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl status nginx &lt;span style="color:#75715e"&gt;# current status&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nginx -t &lt;span style="color:#75715e"&gt;# test configuration&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;</description></item></channel></rss>
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;</description></item><item><title>Installing Proxmox on a Laptop — Full Disk, Lid Closed, Screen Off</title><link>https://padrasto.github.io/post/proxmox-laptop/</link><pubDate>Wed, 19 Jul 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/proxmox-laptop/</guid><description>&lt;p&gt;Proxmox VE is an open-source virtualisation platform that combines KVM-based virtual machines and LXC containers under a single web interface. It&amp;rsquo;s typically deployed on dedicated server hardware, but a laptop makes a perfectly capable homelab node — especially if it&amp;rsquo;s sitting unused. It has a built-in UPS (the battery), a screen for local access, and low idle power consumption compared to a tower.&lt;/p&gt;
+&lt;p&gt;Installing on a laptop introduces two problems the standard Proxmox documentation doesn&amp;rsquo;t address well: the default partitioning wastes most of the disk, and closing the lid suspends the machine. This article covers both, along with the full installation process.&lt;/p&gt;
+&lt;h2 id="what-proxmox-installs"&gt;What Proxmox Installs
+&lt;/h2&gt;&lt;p&gt;Proxmox runs on Debian and uses LVM (Logical Volume Manager) to manage storage. The default installer creates three logical volumes on a volume group called &lt;code&gt;pve&lt;/code&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;pve/root&lt;/code&gt; — the root filesystem for the Proxmox OS (around 96GB by default regardless of disk size)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;pve/swap&lt;/code&gt; — swap space&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;pve/data&lt;/code&gt; — a thin-provisioned LVM pool intended for VM disk images&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The problem is that &lt;code&gt;pve/data&lt;/code&gt; is not directly usable as a standard filesystem — it&amp;rsquo;s a thin pool, designed for LVM thin provisioning. The Proxmox web UI uses it through the &lt;code&gt;local-lvm&lt;/code&gt; storage definition. On a laptop with a single disk, this setup leaves the &lt;code&gt;local&lt;/code&gt; storage (which maps to &lt;code&gt;/var/lib/vz&lt;/code&gt; on &lt;code&gt;pve/root&lt;/code&gt;) severely limited, and the split between &lt;code&gt;local&lt;/code&gt; and &lt;code&gt;local-lvm&lt;/code&gt; adds unnecessary complexity for a single-node homelab.&lt;/p&gt;
+&lt;p&gt;The solution is to remove &lt;code&gt;pve/data&lt;/code&gt;, reclaim that space into &lt;code&gt;pve/root&lt;/code&gt;, and use only the &lt;code&gt;local&lt;/code&gt; storage for everything — ISOs, VM disks, backups, and container templates.&lt;/p&gt;
+&lt;h2 id="installation"&gt;Installation
+&lt;/h2&gt;&lt;p&gt;Download the Proxmox VE ISO from &lt;a class="link" href="https://www.proxmox.com/en/downloads" target="_blank" rel="noopener"
+ &gt;proxmox.com/downloads&lt;/a&gt; and write it to a USB drive:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo dd &lt;span style="color:#66d9ef"&gt;if&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;proxmox-ve_*.iso of&lt;span style="color:#f92672"&gt;=&lt;/span&gt;/dev/sdX bs&lt;span style="color:#f92672"&gt;=&lt;/span&gt;4M status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;progress
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Replace &lt;code&gt;/dev/sdX&lt;/code&gt; with your USB device. Boot from the USB and follow the graphical installer. During installation:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Set a static IP address for the management interface — you&amp;rsquo;ll need it to access the web UI&lt;/li&gt;
+&lt;li&gt;Set the hostname to something meaningful (&lt;code&gt;proxmox.local&lt;/code&gt; works fine for a homelab)&lt;/li&gt;
+&lt;li&gt;The disk partitioning is automatic — don&amp;rsquo;t worry about it now, you&amp;rsquo;ll fix it after boot&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;After installation, access the web UI from another machine at &lt;code&gt;https://&amp;lt;proxmox_ip&amp;gt;:8006&lt;/code&gt;. Ignore the SSL certificate warning — Proxmox uses a self-signed certificate by default.&lt;/p&gt;
+&lt;h2 id="reclaiming-disk-space"&gt;Reclaiming Disk Space
+&lt;/h2&gt;&lt;p&gt;After the first login, open the Proxmox shell (Node → Shell in the web UI, or SSH into the machine) and run the following three commands.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Remove the thin-pool volume:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;lvremove /dev/pve/data
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Type &lt;code&gt;y&lt;/code&gt; to confirm. This removes the LVM thin pool. No data is lost because the machine is freshly installed.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Expand the root volume to use all freed space:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;lvresize -l +100%FREE /dev/pve/root
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This grows the &lt;code&gt;pve/root&lt;/code&gt; logical volume to consume all the space that was occupied by &lt;code&gt;pve/data&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Resize the filesystem to match the new volume size:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;resize2fs /dev/mapper/pve-root
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;LVM operates at the block level — resizing the logical volume doesn&amp;rsquo;t automatically resize the filesystem inside it. &lt;code&gt;resize2fs&lt;/code&gt; extends the ext4 filesystem to fill the newly available space.&lt;/p&gt;
+&lt;p&gt;Verify the result:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;df -h /
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The root filesystem should now reflect the full available disk space.&lt;/p&gt;
+&lt;h2 id="remove-local-lvm-from-the-web-ui"&gt;Remove local-lvm from the Web UI
+&lt;/h2&gt;&lt;p&gt;The &lt;code&gt;local-lvm&lt;/code&gt; storage definition in the Proxmox UI still points to the volume you just removed. Go to &lt;strong&gt;Datacenter → Storage&lt;/strong&gt;, select &lt;code&gt;local-lvm&lt;/code&gt;, and click &lt;strong&gt;Remove&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Then edit the &lt;code&gt;local&lt;/code&gt; storage: select it, click &lt;strong&gt;Edit&lt;/strong&gt;, and make sure &lt;strong&gt;Content&lt;/strong&gt; includes all types — Disk image, Container, ISO image, Container template, Snippets, Backup. This allows &lt;code&gt;local&lt;/code&gt; to handle everything that &lt;code&gt;local-lvm&lt;/code&gt; previously handled.&lt;/p&gt;
+&lt;h2 id="disable-lid-suspend"&gt;Disable Lid Suspend
+&lt;/h2&gt;&lt;p&gt;By default, closing the laptop lid triggers a suspend event managed by &lt;code&gt;systemd-logind&lt;/code&gt;. On a server, this is the last thing you want.&lt;/p&gt;
+&lt;p&gt;Edit the logind configuration:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nano /etc/systemd/logind.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Find and set (or uncomment) these two lines:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;HandleLidSwitch=ignore
+HandleLidSwitchDocked=ignore
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;HandleLidSwitch&lt;/code&gt; controls what happens when the lid is closed on battery or AC power. &lt;code&gt;HandleLidSwitchDocked&lt;/code&gt; controls the behaviour when connected to a docking station. Setting both to &lt;code&gt;ignore&lt;/code&gt; ensures the machine stays running regardless.&lt;/p&gt;
+&lt;p&gt;Restart the service for the change to take effect:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;systemctl restart systemd-logind.service
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Test it by closing the lid — the machine should remain accessible over the network.&lt;/p&gt;
+&lt;h2 id="turn-off-the-screen-automatically"&gt;Turn Off the Screen Automatically
+&lt;/h2&gt;&lt;p&gt;With the lid closed and suspend disabled, the screen stays on indefinitely, wasting power. The &lt;code&gt;consoleblank&lt;/code&gt; kernel parameter blanks the console after a set number of seconds of inactivity.&lt;/p&gt;
+&lt;p&gt;Edit the GRUB configuration:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nano /etc/default/grub
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Find this line:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;GRUB_CMDLINE_LINUX=&amp;#34;&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Change it to:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;GRUB_CMDLINE_LINUX=&amp;#34;consoleblank=300&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;300&lt;/code&gt; is seconds — the screen will blank after 5 minutes of inactivity. Adjust to your preference.&lt;/p&gt;
+&lt;p&gt;Update GRUB to apply the change:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;update-grub
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Reboot for the kernel parameter to take effect:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;reboot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;After rebooting, the screen will blank after 5 minutes. The machine remains fully operational — SSH, web UI, and all running VMs continue unaffected.&lt;/p&gt;
+&lt;h2 id="verify-everything"&gt;Verify Everything
+&lt;/h2&gt;&lt;p&gt;Check disk usage:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;df -h
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;lsblk
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;lvdisplay
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check that &lt;code&gt;systemd-logind&lt;/code&gt; has the correct configuration loaded:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;systemctl show systemd-logind | grep -i lid
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check the active kernel parameters including &lt;code&gt;consoleblank&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;cat /proc/cmdline
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check Proxmox node status in the web UI — the storage panel should now show &lt;code&gt;local&lt;/code&gt; with the full available capacity.&lt;/p&gt;
+&lt;h2 id="network-access"&gt;Network Access
+&lt;/h2&gt;&lt;p&gt;The Proxmox web UI is always at &lt;code&gt;https://&amp;lt;ip&amp;gt;:8006&lt;/code&gt;. For SSH:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh root@&amp;lt;proxmox_ip&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Proxmox does not create a non-root user by default. For daily management, the web UI is the primary interface — SSH is for configuration and recovery tasks.&lt;/p&gt;
+&lt;h2 id="optional--static-ip-after-installation"&gt;Optional — Static IP After Installation
+&lt;/h2&gt;&lt;p&gt;If you need to change or set the IP after installation, edit the network interface file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nano /etc/network/interfaces
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;A typical static configuration:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;auto lo
+iface lo inet loopback
+
+auto vmbr0
+iface vmbr0 inet static
+ address 192.168.1.100/24
+ gateway 192.168.1.1
+ bridge-ports eth0
+ bridge-stp off
+ bridge-fd 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;vmbr0&lt;/code&gt; is the default Linux bridge Proxmox creates for VM networking. VMs attach to this bridge and share the physical network interface.&lt;/p&gt;
+&lt;p&gt;Restart networking:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;systemctl restart networking
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description></item><item><title>SSH Hardening on Ubuntu — Key Authentication and Secure Configuration</title><link>https://padrasto.github.io/post/ssh-ubuntu/</link><pubDate>Tue, 18 Jul 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/ssh-ubuntu/</guid><description>&lt;p&gt;SSH is the primary way to manage a Linux server remotely. The default configuration gets you connected, but it leaves several attack vectors open — password authentication being the most obvious. A server exposed to the internet with password auth enabled will be under constant brute-force attack within minutes of going online.&lt;/p&gt;
+&lt;p&gt;This article covers a complete initial hardening setup: creating a non-root admin user, configuring key-based authentication, disabling passwords, and locking down &lt;code&gt;sshd_config&lt;/code&gt; properly.&lt;/p&gt;
+&lt;h2 id="why-disable-password-authentication"&gt;Why Disable Password Authentication
+&lt;/h2&gt;&lt;p&gt;Password authentication is vulnerable to brute-force attacks. Any server with port 22 open receives thousands of login attempts per day from automated scanners. Even with a strong password, you&amp;rsquo;re relying entirely on its complexity.&lt;/p&gt;
+&lt;p&gt;SSH key authentication works differently: the client holds a private key, the server holds the corresponding public key. Authentication succeeds only if the client can prove it holds the private key — without ever sending it over the network. A private key protected with a passphrase adds a second factor.&lt;/p&gt;
+&lt;p&gt;There is no realistic brute-force attack against a properly generated SSH key pair.&lt;/p&gt;
+&lt;h2 id="step-1--create-a-non-root-admin-user"&gt;Step 1 — Create a Non-Root Admin User
+&lt;/h2&gt;&lt;p&gt;Log into the server as root:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh root@&amp;lt;server_ip&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Running everything as root is dangerous — a single mistake can cause irreversible damage. Create a regular user and grant it sudo privileges instead:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;adduser user
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;usermod -aG sudo user
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Verify the user was added to sudo:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;groups user
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The output should include &lt;code&gt;sudo&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id="step-2--generate-an-ssh-key-pair-on-the-client"&gt;Step 2 — Generate an SSH Key Pair on the Client
+&lt;/h2&gt;&lt;p&gt;Do this on your &lt;strong&gt;local machine&lt;/strong&gt;, not the server.&lt;/p&gt;
+&lt;p&gt;Generate an Ed25519 key pair — Ed25519 is faster and more secure than the default RSA:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh-keygen -t ed25519 -C &lt;span style="color:#e6db74"&gt;&amp;#34;your_label&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If you need RSA for compatibility reasons, use at least 4096 bits:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh-keygen -t rsa -b &lt;span style="color:#ae81ff"&gt;4096&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The command will ask where to save the key (default &lt;code&gt;~/.ssh/id_ed25519&lt;/code&gt;) and optionally for a passphrase. Use a passphrase — it encrypts the private key on disk so it can&amp;rsquo;t be used if the file is stolen.&lt;/p&gt;
+&lt;p&gt;This creates two files:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;~/.ssh/id_ed25519&lt;/code&gt; — the private key. Never share this, never copy it to a server&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;~/.ssh/id_ed25519.pub&lt;/code&gt; — the public key. This is what you put on the server&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="step-3--copy-the-public-key-to-the-server"&gt;Step 3 — Copy the Public Key to the Server
+&lt;/h2&gt;&lt;p&gt;The easiest method is &lt;code&gt;ssh-copy-id&lt;/code&gt;, which handles the file creation and permissions automatically:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh-copy-id -i ~/.ssh/id_ed25519.pub user@&amp;lt;server_ip&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You&amp;rsquo;ll be prompted for the user&amp;rsquo;s password (this is the last time you&amp;rsquo;ll need it). The command copies the public key to &lt;code&gt;~/.ssh/authorized_keys&lt;/code&gt; on the server with the correct permissions.&lt;/p&gt;
+&lt;p&gt;If &lt;code&gt;ssh-copy-id&lt;/code&gt; is not available, do it manually. On the server, switch to the new user:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;su - user
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Create the &lt;code&gt;.ssh&lt;/code&gt; directory with the correct permissions:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;mkdir ~/.ssh
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod &lt;span style="color:#ae81ff"&gt;700&lt;/span&gt; ~/.ssh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;700&lt;/code&gt; permission means only the owner can read, write, or enter the directory. SSH will refuse to use &lt;code&gt;authorized_keys&lt;/code&gt; if the directory permissions are too open.&lt;/p&gt;
+&lt;p&gt;Create the &lt;code&gt;authorized_keys&lt;/code&gt; file and paste your public key into it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nano ~/.ssh/authorized_keys
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Set the correct permissions on the file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;chmod &lt;span style="color:#ae81ff"&gt;600&lt;/span&gt; ~/.ssh/authorized_keys
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;600&lt;/code&gt; means only the owner can read and write the file. Again, SSH enforces this — wrong permissions and key auth silently fails.&lt;/p&gt;
+&lt;p&gt;Return to root:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;exit
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="step-4--test-key-authentication-before-disabling-passwords"&gt;Step 4 — Test Key Authentication Before Disabling Passwords
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Do not disable password authentication before confirming key auth works.&lt;/strong&gt; If you lock yourself out, you&amp;rsquo;ll need console access to recover.&lt;/p&gt;
+&lt;p&gt;Open a new terminal (keep the current session open as a fallback) and test:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh -i ~/.ssh/id_ed25519 user@&amp;lt;server_ip&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If you connect without being asked for a password (or only asked for your key passphrase), key auth is working. Only proceed to the next step after confirming this.&lt;/p&gt;
+&lt;h2 id="step-5--harden-sshd_config"&gt;Step 5 — Harden sshd_config
+&lt;/h2&gt;&lt;p&gt;Edit the SSH daemon configuration:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/ssh/sshd_config
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Apply the following settings:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Disable password authentication:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;PasswordAuthentication no
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Ensure public key authentication is enabled:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;PubkeyAuthentication yes
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Disable root login:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;PermitRootLogin no
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Root login over SSH should always be disabled. Use your sudo user instead. This prevents attackers from targeting the one account that exists on every Linux system.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Disable challenge-response authentication:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;ChallengeResponseAuthentication no
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This disables PAM-based authentication methods like one-time passwords and keyboard-interactive prompts that could still allow password-based access through the back door.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Disable empty passwords:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;PermitEmptyPasswords no
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Change the default port (optional but reduces noise):&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Port 2222
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Changing from port 22 eliminates the majority of automated scanners, which almost always target the default port. It&amp;rsquo;s not a security measure by itself — anyone doing a full port scan will find it — but it dramatically reduces log noise. If you change this, update your firewall rules and remember to specify the port when connecting:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh -p &lt;span style="color:#ae81ff"&gt;2222&lt;/span&gt; user@&amp;lt;server_ip&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;Limit authentication attempts:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;MaxAuthTries 3
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;After 3 failed attempts, the connection is dropped.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Set a login grace time:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;LoginGraceTime 30
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The server disconnects unauthenticated connections after 30 seconds.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Disable X11 forwarding if you don&amp;rsquo;t need it:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;X11Forwarding no
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Restrict which users can log in (optional but recommended):&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;AllowUsers user
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Only the listed users can authenticate. Any other account — including ones created by software — cannot log in via SSH even if they have valid credentials.&lt;/p&gt;
+&lt;p&gt;The full set of changes in context:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Port 22
+PermitRootLogin no
+MaxAuthTries 3
+LoginGraceTime 30
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+PasswordAuthentication no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+X11Forwarding no
+AllowUsers user
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id="step-6--reload-sshd"&gt;Step 6 — Reload sshd
+&lt;/h2&gt;&lt;p&gt;Apply the changes:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl reload sshd
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Test the connection again from a new terminal before closing the existing session:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh user@&amp;lt;server_ip&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If it connects, you&amp;rsquo;re done. If something went wrong, the existing session keeps you from being locked out.&lt;/p&gt;
+&lt;h2 id="step-7--firewall"&gt;Step 7 — Firewall
+&lt;/h2&gt;&lt;p&gt;If UFW is not already configured, set it up:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw allow OpenSSH
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw enable
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw status
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If you changed the SSH port:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw allow 2222/tcp
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw deny 22/tcp
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="managing-multiple-keys"&gt;Managing Multiple Keys
+&lt;/h2&gt;&lt;p&gt;If you manage multiple servers, use &lt;code&gt;~/.ssh/config&lt;/code&gt; on your local machine to avoid typing long commands:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Host myserver
+ HostName 192.168.1.10
+ User user
+ Port 22
+ IdentityFile ~/.ssh/id_ed25519
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With this in place, you connect with just:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ssh myserver
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="verifying-the-configuration"&gt;Verifying the Configuration
+&lt;/h2&gt;&lt;p&gt;Check which authentication methods are active:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo sshd -T | grep -E &lt;span style="color:#e6db74"&gt;&amp;#39;passwordauthentication|pubkeyauthentication|permitrootlogin|port&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;sshd -T&lt;/code&gt; prints the full effective configuration, including defaults. This is more reliable than reading &lt;code&gt;sshd_config&lt;/code&gt; directly because it shows what sshd actually has loaded.&lt;/p&gt;
+&lt;p&gt;Check active SSH sessions:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;who
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check recent login attempts (successful and failed):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo journalctl -u ssh --no-pager | tail -50
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or check the auth log directly:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo tail -f /var/log/auth.log
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Watching this file after hardening shows the brute-force attempts hitting the server and failing — a good confirmation that the configuration is working.&lt;/p&gt;</description></item><item><title>nmap — A Practical Guide for Sysadmins</title><link>https://padrasto.github.io/post/nmap/</link><pubDate>Mon, 13 Mar 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/nmap/</guid><description>&lt;p&gt;nmap (Network Mapper) is an open-source tool for network discovery and security auditing. It&amp;rsquo;s one of the most used tools in a sysadmin&amp;rsquo;s toolkit — not just for penetration testing, but for everyday tasks like checking which ports are open on a server, discovering hosts on a network, or verifying firewall rules are working as expected.&lt;/p&gt;
+&lt;p&gt;This article covers installation and the most useful scan types, with an explanation of what each one actually does under the hood.&lt;/p&gt;
+&lt;h2 id="installation"&gt;Installation
+&lt;/h2&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install nmap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Verify the installed version:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap --version
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="understanding-scan-types"&gt;Understanding Scan Types
+&lt;/h2&gt;&lt;p&gt;Before running scans, it&amp;rsquo;s worth understanding the two main methods nmap uses to probe ports.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;TCP Connect scan (&lt;code&gt;-sT&lt;/code&gt;)&lt;/strong&gt; — completes a full TCP three-way handshake (SYN → SYN-ACK → ACK). It&amp;rsquo;s reliable but noisy: the connection is fully logged by the target.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;SYN scan (&lt;code&gt;-sS&lt;/code&gt;)&lt;/strong&gt; — sends a SYN packet and waits for a response, but never completes the handshake. If the port is open, the target replies with SYN-ACK; nmap then sends RST to tear it down without establishing a connection. This is the default when run as root, and it&amp;rsquo;s faster and less likely to appear in application logs.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;UDP scan (&lt;code&gt;-sU&lt;/code&gt;)&lt;/strong&gt; — scans UDP ports. Slower than TCP scans because UDP has no handshake — nmap has to wait for ICMP &amp;ldquo;port unreachable&amp;rdquo; responses or timeouts to determine port state.&lt;/p&gt;
+&lt;h2 id="basic-host-scan"&gt;Basic Host Scan
+&lt;/h2&gt;&lt;p&gt;Scan a single host for open ports:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;By default, nmap scans the 1,000 most commonly used TCP ports. Open ports, their state, and the service name are shown in the output.&lt;/p&gt;
+&lt;p&gt;Scan a specific port or range:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -p &lt;span style="color:#ae81ff"&gt;22&lt;/span&gt; 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -p 22,80,443 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -p 1-1024 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Scan all 65,535 ports:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -p- 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="host-discovery-on-a-network"&gt;Host Discovery on a Network
+&lt;/h2&gt;&lt;p&gt;Discover which hosts are up on a subnet without scanning their ports:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sn 192.168.1.0/24
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;-sn&lt;/code&gt; (previously &lt;code&gt;-sP&lt;/code&gt;) sends ICMP echo requests and ARP probes to each address in the range and reports which ones respond. Useful for mapping a network quickly.&lt;/p&gt;
+&lt;p&gt;To scan all discovered hosts and their ports in one command:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap 192.168.1.0/24
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="syn-scan"&gt;SYN Scan
+&lt;/h2&gt;&lt;p&gt;The default scan type when run as root. Faster and stealthier than a full TCP connect scan:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmap -sS 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="service-and-version-detection"&gt;Service and Version Detection
+&lt;/h2&gt;&lt;p&gt;Identify the software and version running on each open port:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sV 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;nmap sends probes to each open port and compares responses against its service fingerprint database. The output will show something like &lt;code&gt;OpenSSH 8.9p1&lt;/code&gt; or &lt;code&gt;nginx 1.18.0&lt;/code&gt; next to the port number.&lt;/p&gt;
+&lt;p&gt;Combine with &lt;code&gt;-p-&lt;/code&gt; to check all ports:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sV -p- 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="os-detection"&gt;OS Detection
+&lt;/h2&gt;&lt;p&gt;Attempt to identify the operating system of the target based on TCP/IP stack behaviour:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmap -O 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;nmap compares packet characteristics (TTL values, TCP window size, IP flags) against a fingerprint database. It works best when at least one open and one closed port are found. Results include a confidence percentage — treat them as educated guesses rather than certainties.&lt;/p&gt;
+&lt;h2 id="combining-options"&gt;Combining Options
+&lt;/h2&gt;&lt;p&gt;The most common all-in-one scan for a full picture of a host:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmap -sS -sV -O 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or use the aggressive scan flag, which enables OS detection, version detection, script scanning, and traceroute:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nmap -A 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;-A&lt;/code&gt; is convenient but noisy — don&amp;rsquo;t use it on networks you don&amp;rsquo;t own or have explicit permission to test.&lt;/p&gt;
+&lt;h2 id="script-engine-nse"&gt;Script Engine (NSE)
+&lt;/h2&gt;&lt;p&gt;nmap includes a scripting engine (NSE) with hundreds of scripts for tasks ranging from service enumeration to vulnerability detection. Scripts are located in &lt;code&gt;/usr/share/nmap/scripts/&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Run scripts against a target:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap --script &amp;lt;script_name&amp;gt; 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run all scripts in the &lt;code&gt;vuln&lt;/code&gt; category to check for known vulnerabilities:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sV --script vuln 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check the default scripts (safe, non-intrusive):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -sC 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;List available scripts by category:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ls /usr/share/nmap/scripts/ | grep smb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="output-formats"&gt;Output Formats
+&lt;/h2&gt;&lt;p&gt;Save scan results to a file. nmap supports several formats:&lt;/p&gt;
+&lt;p&gt;Normal text output:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -oN scan.txt 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;XML output (useful for parsing with other tools):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -oX scan.xml 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Grepable format:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -oG scan.gnmap 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Save all three formats at once:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -oA scan 192.168.1.10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This creates &lt;code&gt;scan.txt&lt;/code&gt;, &lt;code&gt;scan.xml&lt;/code&gt;, and &lt;code&gt;scan.gnmap&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id="timing-and-performance"&gt;Timing and Performance
+&lt;/h2&gt;&lt;p&gt;nmap has six timing templates (&lt;code&gt;-T0&lt;/code&gt; to &lt;code&gt;-T5&lt;/code&gt;) that control scan speed and aggressiveness:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;-T0&lt;/code&gt; / &lt;code&gt;-T1&lt;/code&gt; — very slow, designed to evade IDS detection&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-T2&lt;/code&gt; — slow&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-T3&lt;/code&gt; — default&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-T4&lt;/code&gt; — faster, recommended for local networks&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-T5&lt;/code&gt; — fastest, may miss results on congested networks&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;nmap -T4 192.168.1.0/24
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="a-note-on-permission"&gt;A Note on Permission
+&lt;/h2&gt;&lt;p&gt;nmap is a powerful tool. Always use it only on networks and systems you own or have explicit written permission to test. Running intrusive scans against systems you don&amp;rsquo;t control is illegal in most jurisdictions, regardless of intent.&lt;/p&gt;
+&lt;p&gt;For lab practice, set up a local VM — something like Metasploitable2 or a basic Ubuntu Server — and scan that instead.&lt;/p&gt;</description></item><item><title>Installing and Configuring QEMU-KVM and libvirt on Ubuntu</title><link>https://padrasto.github.io/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/</link><pubDate>Thu, 09 Mar 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/</guid><description>&lt;p&gt;KVM, QEMU, and libvirt are three separate pieces that work together to provide virtualisation on Linux. Understanding what each one does makes the setup easier to reason about.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;KVM&lt;/strong&gt; (Kernel-based Virtual Machine) is a Linux kernel module that turns the kernel itself into a hypervisor. It uses the CPU&amp;rsquo;s hardware virtualisation extensions (Intel VT-x or AMD-V) to run virtual machines at near-native speed. KVM alone is just a kernel interface — it doesn&amp;rsquo;t handle disk images, networking, or device emulation.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;QEMU&lt;/strong&gt; fills that gap. It emulates hardware — CPU, RAM, disk controllers, network cards — and when paired with KVM, delegates the CPU-intensive work to the kernel module. The result is fast, hardware-accelerated virtualisation with full device emulation.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;libvirt&lt;/strong&gt; sits on top of both. It&amp;rsquo;s a management API and daemon (&lt;code&gt;libvirtd&lt;/code&gt;) that provides a consistent interface for creating, starting, stopping, and configuring VMs — regardless of the underlying hypervisor. Tools like &lt;code&gt;virt-manager&lt;/code&gt; (GUI) and &lt;code&gt;virsh&lt;/code&gt; (CLI) talk to libvirt, not directly to QEMU or KVM.&lt;/p&gt;
+&lt;h2 id="check-hardware-support"&gt;Check Hardware Support
+&lt;/h2&gt;&lt;p&gt;Before installing, confirm your CPU supports hardware virtualisation:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;egrep -c &lt;span style="color:#e6db74"&gt;&amp;#39;(vmx|svm)&amp;#39;&lt;/span&gt; /proc/cpuinfo
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;A result of &lt;code&gt;1&lt;/code&gt; or more means you&amp;rsquo;re good. &lt;code&gt;vmx&lt;/code&gt; is Intel VT-x, &lt;code&gt;svm&lt;/code&gt; is AMD-V. If the result is &lt;code&gt;0&lt;/code&gt;, KVM won&amp;rsquo;t work — you&amp;rsquo;d need to enable virtualisation in the BIOS/UEFI.&lt;/p&gt;
+&lt;h2 id="install-the-required-packages"&gt;Install the Required Packages
+&lt;/h2&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install qemu-kvm libvirt-clients libvirt-daemon-system bridge-utils libguestfs-tools genisoimage virtinst libosinfo-bin virt-manager dnsmasq
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;What each package does:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;qemu-kvm&lt;/code&gt; — the QEMU emulator with KVM support&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;libvirt-daemon-system&lt;/code&gt; — the libvirt daemon and system integration&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;libvirt-clients&lt;/code&gt; — command-line tools including &lt;code&gt;virsh&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;bridge-utils&lt;/code&gt; — tools for managing network bridges (needed for VM networking)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;libguestfs-tools&lt;/code&gt; — utilities for accessing and modifying VM disk images&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;genisoimage&lt;/code&gt; — creates ISO images (useful for cloud-init and VM provisioning)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;virtinst&lt;/code&gt; — the &lt;code&gt;virt-install&lt;/code&gt; command for creating VMs from the CLI&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;libosinfo-bin&lt;/code&gt; — OS information database, used by virt-manager to auto-configure VMs&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;virt-manager&lt;/code&gt; — graphical interface for managing VMs&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dnsmasq&lt;/code&gt; — provides DHCP and DNS for the default NAT network&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="add-your-user-to-the-required-groups"&gt;Add Your User to the Required Groups
+&lt;/h2&gt;&lt;p&gt;Add yourself to the &lt;code&gt;libvirt&lt;/code&gt; group to manage VMs without root:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo adduser $USER libvirt
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo adduser $USER libvirt-qemu
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;libvirt-qemu&lt;/code&gt; group gives your user permission to access QEMU processes managed by libvirt. Without it, you may get permission denied errors when starting VMs.&lt;/p&gt;
+&lt;p&gt;Add yourself to the &lt;code&gt;kvm&lt;/code&gt; group for direct KVM device access:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo addgroup &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;&lt;span style="color:#66d9ef"&gt;$(&lt;/span&gt;whoami&lt;span style="color:#66d9ef"&gt;)&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; libvirt
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo addgroup &lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt;&lt;span style="color:#66d9ef"&gt;$(&lt;/span&gt;whoami&lt;span style="color:#66d9ef"&gt;)&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;&lt;/span&gt; kvm
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;/dev/kvm&lt;/code&gt; device is what allows processes to use hardware virtualisation. Members of the &lt;code&gt;kvm&lt;/code&gt; group can access it without root.&lt;/p&gt;
+&lt;h2 id="apply-the-changes"&gt;Apply the Changes
+&lt;/h2&gt;&lt;p&gt;Reboot for the group memberships to take effect:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo reboot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="verify-the-installation"&gt;Verify the Installation
+&lt;/h2&gt;&lt;p&gt;After rebooting, confirm libvirt is running:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl status libvirtd
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check that your user can interact with libvirt without sudo:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;virsh list --all
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If it returns an empty list with no errors, the setup is correct. Open &lt;code&gt;virt-manager&lt;/code&gt; from your application menu to create and manage VMs graphically.&lt;/p&gt;</description></item><item><title>Kali Linux in Docker with Xfce and RDP Access</title><link>https://padrasto.github.io/post/kali-docker/</link><pubDate>Tue, 28 Feb 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/kali-docker/</guid><description>&lt;p&gt;Running Kali Linux inside Docker might seem like an odd choice at first, but it has real advantages. The main one is speed — Docker containers start in seconds, compared to the boot time of a full virtual machine. There&amp;rsquo;s also the storage benefit: the base Kali image is minimal, and you only install what you actually need.&lt;/p&gt;
+&lt;p&gt;A typical use case: you need to run a specific tool like &lt;code&gt;nmap&lt;/code&gt; or &lt;code&gt;nikto&lt;/code&gt;, you don&amp;rsquo;t want to keep a full VM around just for that, and you want to be up and running in under a minute.&lt;/p&gt;
+&lt;h2 id="running-kali-from-the-base-image"&gt;Running Kali from the Base Image
+&lt;/h2&gt;&lt;p&gt;Pull the official Kali rolling image:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker pull kalilinux/kali-rolling
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The base image comes with no tools installed by default. That&amp;rsquo;s intentional — you build on top of it with only what you need.&lt;/p&gt;
+&lt;p&gt;List your local images to confirm it&amp;rsquo;s there:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker images
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Start an interactive container:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker run -it kalilinux/kali-rolling
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;-it&lt;/code&gt; flags attach your terminal to the container (&lt;code&gt;-i&lt;/code&gt; keeps stdin open, &lt;code&gt;-t&lt;/code&gt; allocates a pseudo-TTY). You&amp;rsquo;ll land directly in a Kali shell.&lt;/p&gt;
+&lt;p&gt;From here, install whatever tools you need. For example:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;apt update &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt install nmap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or the full top 10 Kali tools metapackage:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;apt install kali-tools-top10
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="saving-your-work-with-docker-commit"&gt;Saving Your Work with docker commit
+&lt;/h2&gt;&lt;p&gt;The problem with &lt;code&gt;docker run&lt;/code&gt; is that when you exit the container, any changes you made are gone. The container is destroyed and you&amp;rsquo;re back to the base image.&lt;/p&gt;
+&lt;p&gt;To preserve your installed tools, commit the container as a new image. While the container is running, open a second terminal and find its ID:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker ps
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Then commit it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker commit &amp;lt;container_id&amp;gt; &amp;lt;new_image_name&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Example:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker commit 0c448678d82d kali-custom
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Next time, start from your saved image instead of the base:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker run -it kali-custom
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Your tools will be there, no reinstallation needed.&lt;/p&gt;
+&lt;h2 id="adding-a-gui-with-xfce-and-rdp"&gt;Adding a GUI with Xfce and RDP
+&lt;/h2&gt;&lt;p&gt;For a full graphical environment, you can install Xfce inside the container and access it remotely via RDP. This is useful when you need a desktop interface for tools that don&amp;rsquo;t work well on the command line.&lt;/p&gt;
+&lt;p&gt;Start a new container with port 3389 forwarded (standard RDP port):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker run -it -p 3389:3389 --name kali-desktop kalilinux/kali-rolling
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Flag breakdown:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;-it&lt;/code&gt; — interactive terminal&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-p 3389:3389&lt;/code&gt; — maps port 3389 on the host to port 3389 in the container&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--name kali-desktop&lt;/code&gt; — gives the container a readable name instead of a random hash&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Install the Xfce desktop and the xrdp server:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;apt install kali-desktop-xfce xrdp
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Set a password for the root user:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;passwd root
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Start the xrdp service:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;service xrdp start
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now open any RDP client — Remmina works well on Linux — and connect to:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Host: localhost:3389
+Username: root
+Password: (the one you set above)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You&amp;rsquo;ll get a full Xfce desktop running inside the container.&lt;/p&gt;
+&lt;p&gt;When you&amp;rsquo;re done, commit this container as well so your desktop setup is preserved:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;docker commit kali-desktop kali-desktop-saved
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="notes"&gt;Notes
+&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;The base image has no tools, which keeps it small. Install only what you need for each use case.&lt;/li&gt;
+&lt;li&gt;For persistent work across sessions, &lt;code&gt;docker commit&lt;/code&gt; is the quick approach. For something more structured, a &lt;code&gt;Dockerfile&lt;/code&gt; is cleaner — but that&amp;rsquo;s a separate topic.&lt;/li&gt;
+&lt;li&gt;Running as root inside the container is fine for a local lab setup, but keep in mind that the container shares the host kernel.&lt;/li&gt;
+&lt;/ul&gt;</description></item><item><title>Setting Up a WireGuard VPN Server on Ubuntu</title><link>https://padrasto.github.io/post/wireguard-no-ubuntu/</link><pubDate>Mon, 27 Feb 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/wireguard-no-ubuntu/</guid><description>&lt;p&gt;WireGuard is a modern VPN protocol built directly into the Linux kernel since version 5.6. Compared to OpenVPN or IPsec, it&amp;rsquo;s significantly simpler to configure, faster, and has a much smaller attack surface — the entire codebase is around 4,000 lines, versus hundreds of thousands for OpenVPN.&lt;/p&gt;
+&lt;p&gt;WireGuard uses a peer-to-peer model with public/private key pairs — similar to SSH keys. Each peer generates its own keypair, shares its public key with the other side, and WireGuard handles authentication and encryption automatically. No certificates, no certificate authorities, no complex handshake configuration.&lt;/p&gt;
+&lt;p&gt;This article covers a full manual setup: server configuration, firewall rules, and client configuration — no scripts.&lt;/p&gt;
+&lt;h2 id="install-wireguard"&gt;Install WireGuard
+&lt;/h2&gt;&lt;p&gt;On the server:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt update &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt install wireguard
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="generate-the-server-keys"&gt;Generate the Server Keys
+&lt;/h2&gt;&lt;p&gt;Generate the private key first, then derive the public key from it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;wg genkey | sudo tee /etc/wireguard/server_private.key | wg pubkey | sudo tee /etc/wireguard/server_public.key
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Restrict permissions on the private key:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod &lt;span style="color:#ae81ff"&gt;600&lt;/span&gt; /etc/wireguard/server_private.key
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Note both values — you&amp;rsquo;ll need them in the configuration file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo cat /etc/wireguard/server_private.key
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo cat /etc/wireguard/server_public.key
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="configure-the-server"&gt;Configure the Server
+&lt;/h2&gt;&lt;p&gt;Create the server configuration file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/wireguard/wg0.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;[Interface]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;PrivateKey&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;lt;server_private_key&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Address&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;10.66.66.1/24&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;ListenPort&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;51820&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;PostUp&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;PostDown&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;What each field does:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;PrivateKey&lt;/code&gt; — the server&amp;rsquo;s private key generated above&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Address&lt;/code&gt; — the server&amp;rsquo;s IP inside the VPN tunnel. &lt;code&gt;10.66.66.1/24&lt;/code&gt; defines the tunnel network as &lt;code&gt;10.66.66.0/24&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ListenPort&lt;/code&gt; — the UDP port WireGuard listens on. &lt;code&gt;51820&lt;/code&gt; is the standard port&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;PostUp&lt;/code&gt; — iptables rules that run when the interface comes up. The &lt;code&gt;FORWARD&lt;/code&gt; rule allows traffic to pass through the server; &lt;code&gt;MASQUERADE&lt;/code&gt; does NAT so client traffic appears to come from the server&amp;rsquo;s IP on &lt;code&gt;eth0&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;PostDown&lt;/code&gt; — removes those rules when the interface goes down&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Restrict permissions on the config file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod &lt;span style="color:#ae81ff"&gt;600&lt;/span&gt; /etc/wireguard/wg0.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="enable-ip-forwarding"&gt;Enable IP Forwarding
+&lt;/h2&gt;&lt;p&gt;By default, Linux doesn&amp;rsquo;t forward packets between interfaces. Enable it so the server can route VPN traffic to the internet:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/sysctl.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Uncomment or add:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Apply without rebooting:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo sysctl -p
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="start-the-wireguard-interface"&gt;Start the WireGuard Interface
+&lt;/h2&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo wg-quick up wg0
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl enable wg-quick@wg0
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Confirm it&amp;rsquo;s running:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo wg show
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You should see the &lt;code&gt;wg0&lt;/code&gt; interface with the listen port and no peers yet.&lt;/p&gt;
+&lt;h2 id="generate-the-client-keys"&gt;Generate the Client Keys
+&lt;/h2&gt;&lt;p&gt;On the client machine:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;wg genkey | sudo tee /etc/wireguard/client_private.key | wg pubkey | sudo tee /etc/wireguard/client_public.key
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod &lt;span style="color:#ae81ff"&gt;600&lt;/span&gt; /etc/wireguard/client_private.key
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Note both values — the private key goes into the client config, the public key gets added as a peer on the server.&lt;/p&gt;
+&lt;h2 id="add-the-client-as-a-peer-on-the-server"&gt;Add the Client as a Peer on the Server
+&lt;/h2&gt;&lt;p&gt;On the server, add a &lt;code&gt;[Peer]&lt;/code&gt; block to &lt;code&gt;/etc/wireguard/wg0.conf&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;[Peer]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;PublicKey&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;lt;client_public_key&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;AllowedIPs&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;10.66.66.2/32&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;PublicKey&lt;/code&gt; — the client&amp;rsquo;s public key&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;AllowedIPs&lt;/code&gt; — the IP assigned to this client inside the tunnel. &lt;code&gt;/32&lt;/code&gt; means only that exact IP routes to this peer&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Restart the interface to apply:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo wg-quick down wg0 &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo wg-quick up wg0
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="configure-the-client"&gt;Configure the Client
+&lt;/h2&gt;&lt;p&gt;Install WireGuard:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install wireguard
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Create the client config:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/wireguard/wg0.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-ini" data-lang="ini"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;[Interface]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;PrivateKey&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;lt;client_private_key&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Address&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;10.66.66.2/32&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;DNS&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;1.1.1.1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#66d9ef"&gt;[Peer]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;PublicKey&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;lt;server_public_key&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;Endpoint&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;&amp;lt;server_public_ip&amp;gt;:51820&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;AllowedIPs&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;0.0.0.0/0,::/0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#a6e22e"&gt;PersistentKeepalive&lt;/span&gt; &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#e6db74"&gt;25&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Address&lt;/code&gt; — the client&amp;rsquo;s tunnel IP, matching what you set in &lt;code&gt;AllowedIPs&lt;/code&gt; on the server&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;DNS&lt;/code&gt; — DNS server to use while connected&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Endpoint&lt;/code&gt; — the server&amp;rsquo;s public IP and WireGuard port&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;AllowedIPs = 0.0.0.0/0,::/0&lt;/code&gt; — routes all traffic through the VPN. To route only the VPN subnet, use &lt;code&gt;10.66.66.0/24&lt;/code&gt; instead&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;PersistentKeepalive = 25&lt;/code&gt; — sends a keepalive every 25 seconds, useful when the client is behind NAT&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Bring the tunnel up:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo wg-quick up wg0
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl enable wg-quick@wg0
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="verify-the-connection"&gt;Verify the Connection
+&lt;/h2&gt;&lt;p&gt;On the client:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo wg show
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You should see the server listed as a peer with a recent handshake and traffic counters. Confirm your public IP changed:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;curl ifconfig.me
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;It should return the server&amp;rsquo;s IP.&lt;/p&gt;
+&lt;h2 id="adding-more-clients"&gt;Adding More Clients
+&lt;/h2&gt;&lt;p&gt;Each additional client follows the same process: generate a keypair, add a &lt;code&gt;[Peer]&lt;/code&gt; block on the server with a unique &lt;code&gt;AllowedIPs&lt;/code&gt; (&lt;code&gt;10.66.66.3/32&lt;/code&gt;, &lt;code&gt;10.66.66.4/32&lt;/code&gt;, etc.), and create a matching config on the client.&lt;/p&gt;</description></item><item><title>Running Wireshark Without Root on Linux</title><link>https://padrasto.github.io/post/wireshark/</link><pubDate>Sun, 26 Feb 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/wireshark/</guid><description>&lt;p&gt;Most tutorials tell you to run &lt;code&gt;sudo wireshark&lt;/code&gt; and move on. That works, but it&amp;rsquo;s the wrong approach — you&amp;rsquo;re running a large, complex GUI application as root, which is an unnecessary security risk.&lt;/p&gt;
+&lt;p&gt;The correct solution is to run Wireshark as a normal user while giving only the packet capture component the privileges it actually needs.&lt;/p&gt;
+&lt;h2 id="why-wireshark-needs-special-permissions"&gt;Why Wireshark Needs Special Permissions
+&lt;/h2&gt;&lt;p&gt;Capturing raw network traffic requires access to network interfaces at a low level. On Linux, this is controlled by two kernel capabilities:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;cap_net_raw&lt;/code&gt;&lt;/strong&gt; — allows opening raw sockets and capturing packets&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;cap_net_admin&lt;/code&gt;&lt;/strong&gt; — allows configuring network interfaces&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;By default, only root has these. The goal is to grant them precisely — without touching the rest of the system.&lt;/p&gt;
+&lt;h2 id="the-role-of-dumpcap"&gt;The Role of dumpcap
+&lt;/h2&gt;&lt;p&gt;Wireshark uses a separation of privileges model. The GUI itself doesn&amp;rsquo;t capture packets — that job belongs to a small helper binary called &lt;code&gt;dumpcap&lt;/code&gt;. Only &lt;code&gt;dumpcap&lt;/code&gt; needs elevated capabilities. Wireshark reads the data &lt;code&gt;dumpcap&lt;/code&gt; provides and runs as a normal user.&lt;/p&gt;
+&lt;p&gt;This means you can give &lt;code&gt;dumpcap&lt;/code&gt; the minimum permissions it needs, and keep Wireshark itself completely unprivileged.&lt;/p&gt;
+&lt;h2 id="setup"&gt;Setup
+&lt;/h2&gt;&lt;p&gt;Install Wireshark:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install wireshark
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;During installation, it will ask: &lt;em&gt;&amp;ldquo;Should non-superusers be able to capture packets?&amp;rdquo;&lt;/em&gt; — select &lt;strong&gt;Yes&lt;/strong&gt;. If you already have it installed and skipped this step, reconfigure it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo dpkg-reconfigure wireshark-common
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Create the &lt;code&gt;wireshark&lt;/code&gt; group (if it doesn&amp;rsquo;t exist yet):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo groupadd wireshark
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Add your user to the group. Replace &lt;code&gt;user&lt;/code&gt; with your actual username:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo adduser user wireshark
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Set &lt;code&gt;dumpcap&lt;/code&gt; group ownership to &lt;code&gt;wireshark&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chgrp wireshark /usr/bin/dumpcap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Restrict execution to root and the &lt;code&gt;wireshark&lt;/code&gt; group:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod &lt;span style="color:#ae81ff"&gt;750&lt;/span&gt; /usr/bin/dumpcap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Grant &lt;code&gt;dumpcap&lt;/code&gt; the two capabilities it needs:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo setcap cap_net_raw,cap_net_admin&lt;span style="color:#f92672"&gt;=&lt;/span&gt;eip /usr/bin/dumpcap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Reboot for the group membership to take effect:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo reboot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="what-setcap-actually-does"&gt;What setcap Actually Does
+&lt;/h2&gt;&lt;p&gt;The &lt;code&gt;setcap&lt;/code&gt; command assigns Linux capabilities directly to a binary, without making it setuid root. The flag &lt;code&gt;=eip&lt;/code&gt; means the capabilities are set as &lt;strong&gt;Effective&lt;/strong&gt;, &lt;strong&gt;Inheritable&lt;/strong&gt;, and &lt;strong&gt;Permitted&lt;/strong&gt; — which is what &lt;code&gt;dumpcap&lt;/code&gt; needs to open raw sockets.&lt;/p&gt;
+&lt;p&gt;This is preferable to &lt;code&gt;setuid root&lt;/code&gt; because the privileges are scoped to exactly what the binary needs, and don&amp;rsquo;t escalate the entire process to root.&lt;/p&gt;
+&lt;h2 id="verify-it-works"&gt;Verify It Works
+&lt;/h2&gt;&lt;p&gt;After rebooting, open Wireshark as your normal user. You should see your network interfaces listed and be able to start a capture without any permission errors.&lt;/p&gt;
+&lt;p&gt;You can also confirm &lt;code&gt;dumpcap&lt;/code&gt; has the capabilities set:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;getcap /usr/bin/dumpcap
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Expected output:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If it&amp;rsquo;s empty, repeat the &lt;code&gt;setcap&lt;/code&gt; command.&lt;/p&gt;</description></item></channel></rss>

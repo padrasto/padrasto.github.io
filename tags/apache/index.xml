@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Apache on Padrasto's Linux Lab</title><link>https://padrasto.github.io/tags/apache/</link><description>Recent content in Apache on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Wed, 03 May 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/tags/apache/index.xml" rel="self" type="application/rss+xml"/><item><title>Hosting an Onion Site on Debian — A Complete Guide</title><link>https://padrasto.github.io/post/criar-um-site-na-rede-onion/</link><pubDate>Wed, 03 May 2023 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/criar-um-site-na-rede-onion/</guid><description>&lt;p&gt;The Tor network allows you to host a website that is accessible only through the Tor Browser, with no domain registrar, no DNS, no public IP address, and no personally identifiable information attached to it. The server&amp;rsquo;s real location remains hidden from visitors, and visitors remain hidden from the server.&lt;/p&gt;
+&lt;p&gt;This is useful for legitimate reasons: publishing content anonymously, running a service in a country with internet censorship, providing a privacy-respecting mirror of an existing site, or simply learning how onion services work.&lt;/p&gt;
+&lt;p&gt;This guide covers a complete setup on Debian — Apache as the web server, Tor as the hidden service layer, and the security hardening steps that most tutorials skip.&lt;/p&gt;
+&lt;h2 id="how-onion-services-work"&gt;How Onion Services Work
+&lt;/h2&gt;&lt;p&gt;When you configure a Tor hidden service, Tor generates a public/private key pair for your server. The public key becomes your &lt;code&gt;.onion&lt;/code&gt; address — a 56-character string derived from the key itself. There are no registrars and no central authority: the address &lt;em&gt;is&lt;/em&gt; the key.&lt;/p&gt;
+&lt;p&gt;Your server connects outward to the Tor network through a set of relay nodes called introduction points, and registers itself there. When a client wants to connect, Tor negotiates a circuit through a rendezvous point — a third relay that neither side controls. Traffic between client and server passes through this circuit, encrypted end-to-end. Neither party learns the other&amp;rsquo;s IP address.&lt;/p&gt;
+&lt;p&gt;This means your server never needs to accept inbound connections from the public internet, and your &lt;code&gt;.onion&lt;/code&gt; address works even if your server is behind NAT.&lt;/p&gt;
+&lt;h2 id="install-apache"&gt;Install Apache
+&lt;/h2&gt;&lt;p&gt;Install the Apache web server:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt update &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt install apache2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Start and enable it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl start apache2
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl enable apache2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Verify it&amp;rsquo;s running:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl status apache2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="harden-apache-for-an-onion-service"&gt;Harden Apache for an Onion Service
+&lt;/h2&gt;&lt;p&gt;Before configuring Tor, harden Apache so it doesn&amp;rsquo;t leak information about the server.&lt;/p&gt;
+&lt;p&gt;Disable the default server signature and token in &lt;code&gt;/etc/apache2/conf-available/security.conf&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/apache2/conf-available/security.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Set these values:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-apache" data-lang="apache"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ServerTokens Prod
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;ServerSignature &lt;span style="color:#66d9ef"&gt;Off&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;TraceEnable &lt;span style="color:#66d9ef"&gt;Off&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;ServerTokens Prod&lt;/code&gt; makes Apache return only &lt;code&gt;Apache&lt;/code&gt; in the &lt;code&gt;Server&lt;/code&gt; header instead of the full version string. &lt;code&gt;ServerSignature Off&lt;/code&gt; removes the server version from error pages. &lt;code&gt;TraceEnable Off&lt;/code&gt; disables the HTTP TRACE method, which can be used for cross-site tracing attacks.&lt;/p&gt;
+&lt;p&gt;Disable directory listing, which exposes file names if there&amp;rsquo;s no index file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/apache2/apache2.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Find the &lt;code&gt;&amp;lt;Directory /var/www/&amp;gt;&lt;/code&gt; block and ensure &lt;code&gt;Options&lt;/code&gt; does not include &lt;code&gt;Indexes&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-apache" data-lang="apache"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;Directory&lt;/span&gt; &lt;span style="color:#e6db74"&gt;/var/www/&lt;/span&gt;&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; Options FollowSymLinks
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; AllowOverride &lt;span style="color:#66d9ef"&gt;None&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; Require &lt;span style="color:#66d9ef"&gt;all&lt;/span&gt; granted
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;/Directory&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Apply the changes:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo a2enconf security
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl reload apache2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="configure-the-virtual-host"&gt;Configure the Virtual Host
+&lt;/h2&gt;&lt;p&gt;Create a dedicated virtual host for the onion site rather than using the default:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/apache2/sites-available/onion.conf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-apache" data-lang="apache"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;VirtualHost&lt;/span&gt; &lt;span style="color:#e6db74"&gt;127.0.0.1:80&lt;/span&gt;&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ServerAdmin webmaster@localhost
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; DocumentRoot &lt;span style="color:#e6db74"&gt;/var/www/onion&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;Directory&lt;/span&gt; &lt;span style="color:#e6db74"&gt;/var/www/onion&lt;/span&gt;&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; Options -Indexes -FollowSymLinks
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; AllowOverride &lt;span style="color:#66d9ef"&gt;None&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; Require &lt;span style="color:#66d9ef"&gt;all&lt;/span&gt; granted
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;/Directory&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; ErrorLog ${APACHE_LOG_DIR}/onion_error.log
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; CustomLog ${APACHE_LOG_DIR}/onion_access.log combined
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;/VirtualHost&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Binding to &lt;code&gt;127.0.0.1:80&lt;/code&gt; instead of &lt;code&gt;0.0.0.0:80&lt;/code&gt; means Apache only listens on the loopback interface — it won&amp;rsquo;t accept connections from the public internet, only from Tor running on the same machine.&lt;/p&gt;
+&lt;p&gt;Create the document root:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo mkdir -p /var/www/onion
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chown -R www-data:www-data /var/www/onion
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Enable the new site and disable the default:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo a2ensite onion
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo a2dissite 000-default
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl reload apache2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="create-the-site-content"&gt;Create the Site Content
+&lt;/h2&gt;&lt;p&gt;Create a basic HTML page:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /var/www/onion/index.html
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-html" data-lang="html"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#75715e"&gt;&amp;lt;!DOCTYPE html&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&amp;lt;&lt;span style="color:#f92672"&gt;html&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;lang&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;en&amp;#34;&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&amp;lt;&lt;span style="color:#f92672"&gt;head&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &amp;lt;&lt;span style="color:#f92672"&gt;meta&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;charset&lt;/span&gt;&lt;span style="color:#f92672"&gt;=&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;UTF-8&amp;#34;&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &amp;lt;&lt;span style="color:#f92672"&gt;title&lt;/span&gt;&amp;gt;Onion Site&amp;lt;/&lt;span style="color:#f92672"&gt;title&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&amp;lt;/&lt;span style="color:#f92672"&gt;head&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&amp;lt;&lt;span style="color:#f92672"&gt;body&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &amp;lt;&lt;span style="color:#f92672"&gt;h1&lt;/span&gt;&amp;gt;Welcome&amp;lt;/&lt;span style="color:#f92672"&gt;h1&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt; &amp;lt;&lt;span style="color:#f92672"&gt;p&lt;/span&gt;&amp;gt;This site is hosted on the Tor network.&amp;lt;/&lt;span style="color:#f92672"&gt;p&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&amp;lt;/&lt;span style="color:#f92672"&gt;body&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&amp;lt;/&lt;span style="color:#f92672"&gt;html&lt;/span&gt;&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="install-tor"&gt;Install Tor
+&lt;/h2&gt;&lt;p&gt;Install Tor from the Debian repositories:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install tor
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;For a more up-to-date version, you can add the Tor Project&amp;rsquo;s official repository. Add their signing key and source:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt install apt-transport-https gpg
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;curl https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | gpg --dearmor | sudo tee /usr/share/keyrings/tor-archive-keyring.gpg &amp;gt; /dev/null
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;echo &lt;span style="color:#e6db74"&gt;&amp;#34;deb [signed-by=/usr/share/keyrings/tor-archive-keyring.gpg] https://deb.torproject.org/torproject.org &lt;/span&gt;&lt;span style="color:#66d9ef"&gt;$(&lt;/span&gt;lsb_release -cs&lt;span style="color:#66d9ef"&gt;)&lt;/span&gt;&lt;span style="color:#e6db74"&gt; main&amp;#34;&lt;/span&gt; | sudo tee /etc/apt/sources.list.d/tor.list
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo apt update &lt;span style="color:#f92672"&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt install tor deb.torproject.org-keyring
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="configure-the-hidden-service"&gt;Configure the Hidden Service
+&lt;/h2&gt;&lt;p&gt;Edit the Tor configuration file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo nano /etc/tor/torrc
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Add these lines at the end:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;HiddenServiceDir /var/lib/tor/hidden_service/
+HiddenServicePort 80 127.0.0.1:80
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;What each line does:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;HiddenServiceDir&lt;/code&gt; — the directory where Tor stores the hidden service keys and hostname. Tor creates this directory automatically with the correct permissions&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HiddenServicePort&lt;/code&gt; — maps a virtual port on the onion address (port 80) to the actual service on the local machine (&lt;code&gt;127.0.0.1:80&lt;/code&gt;). The virtual port and local port don&amp;rsquo;t have to match — you could expose port 80 externally while running Apache on port 8080 locally&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Restart Tor to generate the keys and activate the service:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl restart tor
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="get-your-onion-address"&gt;Get Your .onion Address
+&lt;/h2&gt;&lt;p&gt;Tor generates the address automatically from the key pair. Retrieve it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;cat /var/lib/tor/hidden_service/hostname
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You&amp;rsquo;ll see a 56-character &lt;code&gt;.onion&lt;/code&gt; address like:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;duskgytldkxiuqc6.onion
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Open this address in the Tor Browser. Your site should load.&lt;/p&gt;
+&lt;h2 id="understanding-the-key-files"&gt;Understanding the Key Files
+&lt;/h2&gt;&lt;p&gt;The hidden service directory contains three files:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ls -la /var/lib/tor/hidden_service/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;hostname&lt;/code&gt; — your &lt;code&gt;.onion&lt;/code&gt; address&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;hs_ed25519_secret_key&lt;/code&gt; — the private key. This is your identity. If you lose it, the address is gone. If someone else gets it, they can impersonate your site&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;hs_ed25519_public_key&lt;/code&gt; — the corresponding public key&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Back up the private key securely.&lt;/strong&gt; This is the only way to restore your &lt;code&gt;.onion&lt;/code&gt; address if the server is lost or rebuilt.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo cp /var/lib/tor/hidden_service/hs_ed25519_secret_key /path/to/secure/backup/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Permissions on this directory must remain restricted — Tor will refuse to start if they&amp;rsquo;re too open:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo chmod &lt;span style="color:#ae81ff"&gt;700&lt;/span&gt; /var/lib/tor/hidden_service/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="v3-onion-addresses"&gt;v3 Onion Addresses
+&lt;/h2&gt;&lt;p&gt;Tor has been using v3 onion addresses since 2020. v3 addresses are 56 characters long and use Ed25519 keys, which are stronger than the RSA-1024 keys used by the old v2 format (16 characters). v2 services were deprecated and disabled in Tor 0.4.6. If you see a 16-character &lt;code&gt;.onion&lt;/code&gt; address anywhere, it&amp;rsquo;s no longer functional.&lt;/p&gt;
+&lt;p&gt;The address you get from a current Tor installation will always be v3.&lt;/p&gt;
+&lt;h2 id="verify-tor-is-working"&gt;Verify Tor Is Working
+&lt;/h2&gt;&lt;p&gt;Check that the hidden service is active:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo systemctl status tor
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Check the Tor logs for any errors:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo journalctl -u tor --no-pager | tail -30
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;A successful startup will include a line like:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;[notice] Tor has successfully opened a circuit. Looks like client functionality is working.
+[notice] Self-testing indicates your ORPort is reachable from the outside.
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id="keep-the-clearnet-site-separate"&gt;Keep the Clearnet Site Separate
+&lt;/h2&gt;&lt;p&gt;If your server also hosts a regular website accessible on the public internet, make sure the onion virtual host is completely separate from it. The onion site should be bound only to &lt;code&gt;127.0.0.1&lt;/code&gt;, and the public site should be on a different document root. This prevents accidental information leakage between the two.&lt;/p&gt;
+&lt;h2 id="firewall"&gt;Firewall
+&lt;/h2&gt;&lt;p&gt;If you have a firewall configured with UFW, there&amp;rsquo;s nothing to open for the onion service — Tor makes outbound connections, not inbound. No ports need to be exposed to the internet. In fact, you can block all inbound traffic and the onion service will still work:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw default deny incoming
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw default allow outgoing
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;sudo ufw enable
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This is one of the key security properties of onion services: the server&amp;rsquo;s real IP never needs to be reachable from the public internet.&lt;/p&gt;</description></item></channel></rss>
