@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+    <head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="KVM, QEMU, and libvirt are three separate pieces that work together to provide virtualisation on Linux. Understanding what each one does makes the setup easier to reason about.\nKVM (Kernel-based Virtual Machine) is a Linux kernel module that turns the kernel itself into a hypervisor. It uses the CPU&rsquo;s hardware virtualisation extensions (Intel VT-x or AMD-V) to run virtual machines at near-native speed. KVM alone is just a kernel interface — it doesn&rsquo;t handle disk images, networking, or device emulation.\n">
 <title>Installing and Configuring QEMU-KVM and libvirt on Ubuntu</title>
 
 
-<link rel="canonical" href="http://localhost:1313/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/">
+<link rel="canonical" href="https://padrasto.github.io/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap">
@@ -14,11 +14,13 @@
 
 <link rel="stylesheet" href="/scss/style.min.389e156f5e9bb13df5a924cfa99dfb9c39f3e01e68d9e146cd65bdae963be145.css"><meta property='og:title' content="Installing and Configuring QEMU-KVM and libvirt on Ubuntu">
 <meta property='og:description' content="KVM, QEMU, and libvirt are three separate pieces that work together to provide virtualisation on Linux. Understanding what each one does makes the setup easier to reason about.\nKVM (Kernel-based Virtual Machine) is a Linux kernel module that turns the kernel itself into a hypervisor. It uses the CPU&rsquo;s hardware virtualisation extensions (Intel VT-x or AMD-V) to run virtual machines at near-native speed. KVM alone is just a kernel interface — it doesn&rsquo;t handle disk images, networking, or device emulation.\n">
-<meta property='og:url' content='http://localhost:1313/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/'>
+<meta property='og:url' content='https://padrasto.github.io/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/'>
 <meta property='og:site_name' content='Padrasto&#39;s Linux Lab'>
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='kvm' /><meta property='article:tag' content='qemu' /><meta property='article:tag' content='libvirt' /><meta property='article:tag' content='virtualisation' /><meta property='article:tag' content='ubuntu' /><meta property='article:tag' content='sysadmin' /><meta property='article:published_time' content='2023-03-09T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2023-03-09T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="Installing and Configuring QEMU-KVM and libvirt on Ubuntu">
 <meta name="twitter:description" content="KVM, QEMU, and libvirt are three separate pieces that work together to provide virtualisation on Linux. Understanding what each one does makes the setup easier to reason about.\nKVM (Kernel-based Virtual Machine) is a Linux kernel module that turns the kernel itself into a hypervisor. It uses the CPU&rsquo;s hardware virtualisation extensions (Intel VT-x or AMD-V) to run virtual machines at near-native speed. KVM alone is just a kernel interface — it doesn&rsquo;t handle disk images, networking, or device emulation.\n">
+    <link rel="shortcut icon" href="/img/avatar.jpeg" />
+
     </head>
     <body class="
     article-page
@@ -512,7 +514,7 @@
             </main>
         </div>
         
-<script type="text/javascript" src="/ts/main.a604d97ca1173d33c6dc35a29ead1806827820a14c3dd6073c9059eb7298c429.js" defer></script>
+<script type="text/javascript" src="/ts/main.acaf849f2b273f6a8368a58b001f336738d0c948d92e79b116467d0c7515f932.js" defer></script>
 
 
     </body>

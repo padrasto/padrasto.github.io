@@ -2,250 +2,262 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://localhost:1313/page/about/</loc>
+    <loc>https://padrasto.github.io/tags/apparmor/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/categories/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/tags/debian/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/tags/fail2ban/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/tags/hardening/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/categories/networking/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/tags/nginx/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/post/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/categories/security/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/tags/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/tags/tor/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/post/tor-hidden-service-hardening/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/tags/ufw/</loc>
+    <lastmod>2026-04-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://padrasto.github.io/page/about/</loc>
     <lastmod>2026-04-05T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/</loc>
+    <loc>https://padrasto.github.io/page/</loc>
     <lastmod>2026-04-05T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/page/</loc>
-    <lastmod>2026-04-05T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/casaos/</loc>
+    <loc>https://padrasto.github.io/tags/casaos/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/</loc>
+    <loc>https://padrasto.github.io/tags/homelab/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/debian/</loc>
+    <loc>https://padrasto.github.io/tags/immich/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/fail2ban/</loc>
+    <loc>https://padrasto.github.io/post/immich-security-remote-access/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/homelab/</loc>
+    <loc>https://padrasto.github.io/categories/linux/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/immich/</loc>
+    <loc>https://padrasto.github.io/tags/privacy/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/immich-security-remote-access/</loc>
+    <loc>https://padrasto.github.io/categories/self-hosting/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/linux/</loc>
+    <loc>https://padrasto.github.io/tags/tailscale/</loc>
     <lastmod>2026-04-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/</loc>
-    <lastmod>2026-04-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/privacy/</loc>
-    <lastmod>2026-04-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/categories/self-hosting/</loc>
-    <lastmod>2026-04-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/</loc>
-    <lastmod>2026-04-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/tailscale/</loc>
-    <lastmod>2026-04-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/ufw/</loc>
-    <lastmod>2026-04-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/jellyfin/</loc>
+    <loc>https://padrasto.github.io/tags/jellyfin/</loc>
     <lastmod>2026-04-02T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/thinkpad/</loc>
+    <loc>https://padrasto.github.io/tags/thinkpad/</loc>
     <lastmod>2026-04-02T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/thinkpad-home-server/</loc>
+    <loc>https://padrasto.github.io/post/thinkpad-home-server/</loc>
     <lastmod>2026-04-02T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/tlp/</loc>
+    <loc>https://padrasto.github.io/tags/tlp/</loc>
     <lastmod>2026-04-02T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/systemd-journalctl-diagnostics/</loc>
+    <loc>https://padrasto.github.io/post/systemd-journalctl-diagnostics/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/journalctl/</loc>
+    <loc>https://padrasto.github.io/tags/journalctl/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/linux/</loc>
+    <loc>https://padrasto.github.io/tags/linux/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/user-and-permissions-management/</loc>
+    <loc>https://padrasto.github.io/post/user-and-permissions-management/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/permissions/</loc>
+    <loc>https://padrasto.github.io/tags/permissions/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/sysadmin/</loc>
+    <loc>https://padrasto.github.io/categories/sysadmin/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/sysadmin/</loc>
+    <loc>https://padrasto.github.io/tags/sysadmin/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/systemd/</loc>
+    <loc>https://padrasto.github.io/tags/systemd/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/troubleshooting/</loc>
+    <loc>https://padrasto.github.io/categories/troubleshooting/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/troubleshooting/</loc>
+    <loc>https://padrasto.github.io/tags/troubleshooting/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/users/</loc>
+    <loc>https://padrasto.github.io/tags/users/</loc>
     <lastmod>2026-03-30T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/automation/</loc>
+    <loc>https://padrasto.github.io/tags/automation/</loc>
     <lastmod>2026-03-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/bash/</loc>
+    <loc>https://padrasto.github.io/categories/bash/</loc>
     <lastmod>2026-03-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/bash/</loc>
+    <loc>https://padrasto.github.io/tags/bash/</loc>
     <lastmod>2026-03-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/disk-monitoring/</loc>
+    <loc>https://padrasto.github.io/categories/disk-monitoring/</loc>
     <lastmod>2026-03-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/disk-monitoring-bash/</loc>
+    <loc>https://padrasto.github.io/post/disk-monitoring-bash/</loc>
     <lastmod>2026-03-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/monitoring/</loc>
+    <loc>https://padrasto.github.io/tags/monitoring/</loc>
     <lastmod>2026-03-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/nginx/</loc>
+    <loc>https://padrasto.github.io/categories/nginx/</loc>
     <lastmod>2026-03-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/nginx/</loc>
+    <loc>https://padrasto.github.io/post/nginx-on-ubuntu-setup-and-troubleshooting/</loc>
     <lastmod>2026-03-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/nginx-on-ubuntu-setup-and-troubleshooting/</loc>
+    <loc>https://padrasto.github.io/tags/server/</loc>
     <lastmod>2026-03-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/server/</loc>
+    <loc>https://padrasto.github.io/categories/ubuntu/</loc>
     <lastmod>2026-03-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/ubuntu/</loc>
+    <loc>https://padrasto.github.io/tags/ubuntu/</loc>
     <lastmod>2026-03-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/ubuntu/</loc>
-    <lastmod>2026-03-18T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/post/proxmox-laptop/</loc>
+    <loc>https://padrasto.github.io/post/proxmox-laptop/</loc>
     <lastmod>2023-07-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/proxmox/</loc>
+    <loc>https://padrasto.github.io/categories/proxmox/</loc>
     <lastmod>2023-07-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/proxmox/</loc>
+    <loc>https://padrasto.github.io/tags/proxmox/</loc>
     <lastmod>2023-07-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/virtualisation/</loc>
+    <loc>https://padrasto.github.io/tags/virtualisation/</loc>
     <lastmod>2023-07-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/hardening/</loc>
+    <loc>https://padrasto.github.io/tags/security/</loc>
     <lastmod>2023-07-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/security/</loc>
+    <loc>https://padrasto.github.io/categories/ssh/</loc>
     <lastmod>2023-07-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/ssh/</loc>
+    <loc>https://padrasto.github.io/tags/ssh/</loc>
     <lastmod>2023-07-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/ssh/</loc>
+    <loc>https://padrasto.github.io/post/ssh-ubuntu/</loc>
     <lastmod>2023-07-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/ssh-ubuntu/</loc>
-    <lastmod>2023-07-18T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/apache/</loc>
+    <loc>https://padrasto.github.io/tags/apache/</loc>
     <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/debian/</loc>
+    <loc>https://padrasto.github.io/categories/debian/</loc>
     <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/criar-um-site-na-rede-onion/</loc>
+    <loc>https://padrasto.github.io/post/criar-um-site-na-rede-onion/</loc>
     <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/onion/</loc>
+    <loc>https://padrasto.github.io/tags/onion/</loc>
     <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/self-hosting/</loc>
+    <loc>https://padrasto.github.io/tags/self-hosting/</loc>
     <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/tor/</loc>
+    <loc>https://padrasto.github.io/categories/tor/</loc>
     <lastmod>2023-05-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/tor/</loc>
-    <lastmod>2023-05-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/networking/</loc>
+    <loc>https://padrasto.github.io/tags/networking/</loc>
     <lastmod>2023-03-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/nmap/</loc>
+    <loc>https://padrasto.github.io/categories/nmap/</loc>
     <lastmod>2023-03-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/nmap/</loc>
+    <loc>https://padrasto.github.io/tags/nmap/</loc>
     <lastmod>2023-03-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/nmap/</loc>
+    <loc>https://padrasto.github.io/post/nmap/</loc>
     <lastmod>2023-03-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/</loc>
+    <loc>https://padrasto.github.io/post/instalar-e-configurar-o-qemu-kvm-e-o-libvirt-no-ubuntu/</loc>
     <lastmod>2023-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/kvm/</loc>
+    <loc>https://padrasto.github.io/categories/kvm/</loc>
     <lastmod>2023-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/kvm/</loc>
+    <loc>https://padrasto.github.io/tags/kvm/</loc>
     <lastmod>2023-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/libvirt/</loc>
+    <loc>https://padrasto.github.io/tags/libvirt/</loc>
     <lastmod>2023-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/qemu/</loc>
+    <loc>https://padrasto.github.io/tags/qemu/</loc>
     <lastmod>2023-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/docker/</loc>
+    <loc>https://padrasto.github.io/categories/docker/</loc>
     <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/docker/</loc>
+    <loc>https://padrasto.github.io/tags/docker/</loc>
     <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/kali-docker/</loc>
+    <loc>https://padrasto.github.io/post/kali-docker/</loc>
     <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/kali-linux/</loc>
+    <loc>https://padrasto.github.io/categories/kali-linux/</loc>
     <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/kali-linux/</loc>
+    <loc>https://padrasto.github.io/tags/kali-linux/</loc>
     <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/rdp/</loc>
+    <loc>https://padrasto.github.io/tags/rdp/</loc>
     <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/xfce/</loc>
+    <loc>https://padrasto.github.io/tags/xfce/</loc>
     <lastmod>2023-02-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/wireguard-no-ubuntu/</loc>
+    <loc>https://padrasto.github.io/post/wireguard-no-ubuntu/</loc>
     <lastmod>2023-02-27T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/vpn/</loc>
+    <loc>https://padrasto.github.io/tags/vpn/</loc>
     <lastmod>2023-02-27T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/wireguard/</loc>
+    <loc>https://padrasto.github.io/tags/wireguard/</loc>
     <lastmod>2023-02-27T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/wireshark/</loc>
+    <loc>https://padrasto.github.io/post/wireshark/</loc>
     <lastmod>2023-02-26T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/wireshark/</loc>
+    <loc>https://padrasto.github.io/categories/wireshark/</loc>
     <lastmod>2023-02-26T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/wireshark/</loc>
+    <loc>https://padrasto.github.io/tags/wireshark/</loc>
     <lastmod>2023-02-26T00:00:00+00:00</lastmod>
   </url>
 </urlset>

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset='utf-8'>
+    <head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content="Proxmox VE is an open-source virtualisation platform that combines KVM-based virtual machines and LXC containers under a single web interface. It&rsquo;s typically deployed on dedicated server hardware, but a laptop makes a perfectly capable homelab node — especially if it&rsquo;s sitting unused. It has a built-in UPS (the battery), a screen for local access, and low idle power consumption compared to a tower.\nInstalling on a laptop introduces two problems the standard Proxmox documentation doesn&rsquo;t address well: the default partitioning wastes most of the disk, and closing the lid suspends the machine. This article covers both, along with the full installation process.\n">
 <title>Installing Proxmox on a Laptop — Full Disk, Lid Closed, Screen Off</title>
 
 
-<link rel="canonical" href="http://localhost:1313/post/proxmox-laptop/">
+<link rel="canonical" href="https://padrasto.github.io/post/proxmox-laptop/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap">
@@ -14,11 +14,13 @@
 
 <link rel="stylesheet" href="/scss/style.min.389e156f5e9bb13df5a924cfa99dfb9c39f3e01e68d9e146cd65bdae963be145.css"><meta property='og:title' content="Installing Proxmox on a Laptop — Full Disk, Lid Closed, Screen Off">
 <meta property='og:description' content="Proxmox VE is an open-source virtualisation platform that combines KVM-based virtual machines and LXC containers under a single web interface. It&rsquo;s typically deployed on dedicated server hardware, but a laptop makes a perfectly capable homelab node — especially if it&rsquo;s sitting unused. It has a built-in UPS (the battery), a screen for local access, and low idle power consumption compared to a tower.\nInstalling on a laptop introduces two problems the standard Proxmox documentation doesn&rsquo;t address well: the default partitioning wastes most of the disk, and closing the lid suspends the machine. This article covers both, along with the full installation process.\n">
-<meta property='og:url' content='http://localhost:1313/post/proxmox-laptop/'>
+<meta property='og:url' content='https://padrasto.github.io/post/proxmox-laptop/'>
 <meta property='og:site_name' content='Padrasto&#39;s Linux Lab'>
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='proxmox' /><meta property='article:tag' content='virtualisation' /><meta property='article:tag' content='homelab' /><meta property='article:tag' content='sysadmin' /><meta property='article:tag' content='linux' /><meta property='article:published_time' content='2023-07-19T00:00:00&#43;00:00'/><meta property='article:modified_time' content='2023-07-19T00:00:00&#43;00:00'/>
 <meta name="twitter:title" content="Installing Proxmox on a Laptop — Full Disk, Lid Closed, Screen Off">
 <meta name="twitter:description" content="Proxmox VE is an open-source virtualisation platform that combines KVM-based virtual machines and LXC containers under a single web interface. It&rsquo;s typically deployed on dedicated server hardware, but a laptop makes a perfectly capable homelab node — especially if it&rsquo;s sitting unused. It has a built-in UPS (the battery), a screen for local access, and low idle power consumption compared to a tower.\nInstalling on a laptop introduces two problems the standard Proxmox documentation doesn&rsquo;t address well: the default partitioning wastes most of the disk, and closing the lid suspends the machine. This article covers both, along with the full installation process.\n">
+    <link rel="shortcut icon" href="/img/avatar.jpeg" />
+
     </head>
     <body class="
     article-page
@@ -587,7 +589,7 @@ iface vmbr0 inet static
             </main>
         </div>
         
-<script type="text/javascript" src="/ts/main.a604d97ca1173d33c6dc35a29ead1806827820a14c3dd6073c9059eb7298c429.js" defer></script>
+<script type="text/javascript" src="/ts/main.acaf849f2b273f6a8368a58b001f336738d0c948d92e79b116467d0c7515f932.js" defer></script>
 
 
     </body>
