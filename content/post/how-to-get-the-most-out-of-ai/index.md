@@ -13,7 +13,7 @@ tags:
 
 AI assistants are genuinely useful tools — but most people use roughly 10% of their potential. They ask a vague question, get a mediocre answer, and conclude that AI is overhyped. The problem is almost never the AI. It's the prompt.
 
-This guide covers everything I've learned about extracting real value from AI: how to structure prompts, how to think about context, advanced techniques, and the mental models that separate people who get great results from those who don't.
+This guide covers everything I've learned about extracting real value from AI: how to structure prompts, how to think about context, advanced techniques, the traps to avoid, and the mental models that separate people who get great results from those who don't.
 
 ---
 
@@ -21,11 +21,13 @@ This guide covers everything I've learned about extracting real value from AI: h
 
 Before any technique, you need the right mental model.
 
-**AI is not a search engine.** Don't ask it for a list of links or a summary of what's on the internet. It's a reasoning system trained on vast amounts of text that can generate, analyze, transform, and critique content.
+**AI is not a search engine.** Don't ask it for links or summaries of what's on the internet. It's a reasoning system trained on vast amounts of text that can generate, analyze, transform, and critique content.
 
 **AI is not a magic oracle.** It doesn't "know" things the way you know your own name. It predicts likely, coherent, useful completions based on context. The better the context you give, the better the output.
 
 **The prompt is the program.** Every word you write shapes the output. Vague input produces vague output. Precise, structured input produces precise, structured output.
+
+**AI has no memory between conversations.** Every session starts from zero unless you explicitly provide history. This is the most commonly forgotten fact and the source of most disappointing interactions.
 
 ---
 
@@ -45,7 +47,7 @@ difference between AppArmor and SELinux. Focus on practical use cases,
 not theory. Use a direct, technical tone. No marketing language.
 ```
 
-The second prompt gives the AI: a length target, an audience, a scope, a focus, and a tone. Every one of those constraints improves the output.
+The second prompt gives the AI a length target, an audience, a scope, a focus, and a tone. Every one of those constraints improves the output.
 
 ### Define the role
 
@@ -75,9 +77,9 @@ already familiar with namespaces and cgroups.
 
 Same topic, completely different output.
 
-### Define the format
+### Define the format explicitly
 
-If you need structured output, ask for it explicitly:
+If you need structured output, ask for it:
 
 ```
 Give me the answer as a markdown table with three columns:
@@ -94,13 +96,22 @@ Structure your response with:
 4. A recommendation
 ```
 
+### Use negative constraints
+
+Tell the AI what you don't want — this is underused and extremely effective:
+
+```
+Write a blog introduction about WireGuard. Do not use phrases like
+"In today's world", "In this article we will", or "game-changer".
+Do not start with a question. Be direct and assume the reader already
+knows what a VPN is.
+```
+
 ---
 
 ## Part 2: Context is Everything
 
-### The more context, the better the output
-
-AI has no memory between conversations (unless explicitly provided). Every conversation starts from zero. Front-load everything relevant:
+### Front-load everything relevant
 
 **Bad:**
 ```
@@ -123,26 +134,41 @@ and sends me an email on failure via msmtp.
 
 If you're asking about a config file, a script, an error message, or a document — paste it. Don't describe it. The AI works with real content far better than with your description of content.
 
-### Provide negative examples
+### When to start a new conversation
 
-Tell the AI what you *don't* want:
+Context accumulates — and degrades. In a very long conversation, early instructions get diluted, the AI starts losing track of your constraints, and output quality drops noticeably.
 
-```
-Write a blog introduction about WireGuard. Do not use phrases like
-"In today's world", "In this article we will", or "game-changer".
-Do not start with a question. Be direct and assume the reader already
-knows what a VPN is.
-```
+Start a new conversation when:
+- You've shifted to a completely different topic
+- The AI starts ignoring constraints you set early on
+- Responses feel increasingly generic
+- The conversation has gone on for 30+ exchanges
 
-Negative constraints are underused and extremely effective.
+A fresh conversation with a well-crafted opening prompt will always outperform a degraded long conversation.
 
 ---
 
 ## Part 3: Advanced Techniques
 
+### Few-shot prompting — the most powerful technique most people ignore
+
+Instead of describing the output you want, show it. Give the AI two or three examples of exactly what you're looking for, then ask it to produce more in the same style.
+
+```
+Here are two examples of the writing style I want:
+
+[Example 1: paste a paragraph you like]
+
+[Example 2: paste another paragraph you like]
+
+Now write a section about WireGuard key management in the same style.
+```
+
+The AI pattern-matches with remarkable precision. This works for writing style, code structure, documentation format, response length — anything where you can provide a reference example. It consistently outperforms trying to describe the style in words.
+
 ### Chain of Thought — make the AI reason step by step
 
-For complex problems, explicitly ask the AI to think through the problem before giving an answer:
+For complex problems, explicitly ask the AI to think through the problem before answering:
 
 ```
 Before answering, think through this step by step. Then give me
@@ -151,9 +177,29 @@ your conclusion.
 
 Or simply add: `Let's think through this carefully.`
 
-This technique significantly improves accuracy on logic, math, and multi-step reasoning problems. The AI produces better answers when it "shows its work."
+This significantly improves accuracy on logic, multi-step reasoning, and technical diagnosis. The AI produces better answers when it shows its work. Don't skip this for anything non-trivial.
 
-### The Socratic approach — ask it to challenge you
+### Make the AI criticize its own response
+
+After getting an answer, ask:
+
+```
+Now criticize the response you just gave. What is wrong, incomplete,
+oversimplified, or based on assumptions that might not hold?
+```
+
+This is one of the most powerful techniques in this guide. AI has a strong tendency toward producing plausible, confident-sounding answers. Forcing it to self-critique surfaces weaknesses it wouldn't otherwise flag. Use this for anything where accuracy matters.
+
+### Steelmanning — force genuine analysis
+
+```
+Give me the strongest possible argument against what I just proposed.
+Don't soften it.
+```
+
+AI tends to validate and agree with the user. Explicitly asking for the opposing argument forces it to engage analytically instead of sycophantically. Pair this with the self-critique technique for decisions with real consequences.
+
+### The Socratic approach — use it as an adversarial reviewer
 
 ```
 I'm planning to set up a Tor hidden service for my personal blog.
@@ -164,43 +210,32 @@ I'm getting wrong, what I'm missing, and what risks I haven't considered.
 Be direct and don't soften the criticism.
 ```
 
-Using AI as an adversarial reviewer is one of the most powerful but underused techniques.
+Most people use AI to execute tasks. Using it to challenge your thinking is often more valuable.
 
-### Iterative refinement — treat it as a conversation
-
-Don't expect perfection on the first prompt. Iterate:
-
-1. Get a first draft
-2. Identify what's wrong or missing
-3. Give targeted feedback
-4. Repeat
+### Ask for confidence levels
 
 ```
-The second paragraph is too vague. Rewrite it with a concrete example
-using nginx as the web server.
+How confident are you in this answer?
+What should I independently verify before acting on it?
+What are you least certain about?
 ```
 
-```
-Good, but the tone is too formal. Make it sound more like a blog post
-written by a practitioner, not a documentation writer.
-```
-
-Each iteration sharpens the output.
+AI knows when it's uncertain — but it won't tell you unless you ask. This is especially important for technical configurations, version-specific behavior, and anything that changes frequently.
 
 ### Ask for alternatives
 
 ```
-Give me three different ways to approach this problem. For each one,
-explain the trade-offs.
+Give me three different ways to approach this problem.
+For each one, explain the trade-offs and when you'd choose it over the others.
 ```
 
 This forces the AI to explore the solution space instead of defaulting to the first plausible answer.
 
-### Use XML or structured tags for complex prompts
+### Use XML tags for complex prompts
 
-For long, multi-part prompts, structure helps the AI parse what you're asking:
+For long, multi-part prompts, structure helps the AI parse exactly what you're asking:
 
-```
+```xml
 <context>
 I run a homelab with three machines: a desktop running Debian 13,
 a ThinkPad T480 as a portable server, and a ThinkPad X270 as
@@ -218,38 +253,124 @@ off-site redundancy, using only open-source tools and no cloud services.
 - Storage available: 2TB on the X270
 - Must work without a static IP
 </constraints>
+
+<format>
+Structured plan with: architecture overview, tool list, implementation
+steps, and failure scenarios.
+</format>
 ```
 
-### Ask for the reasoning, not just the answer
+### Request structured output for programmatic use
+
+If you're integrating AI output into a workflow or script, ask for strict JSON with a defined schema:
 
 ```
-Why is this the right approach? What are the assumptions behind it?
-Under what circumstances would this be wrong?
+Return your answer as JSON only, with no explanation, no markdown
+code fences, and no preamble. Use this exact structure:
+
+{
+  "recommendation": "string",
+  "reasons": ["string"],
+  "risks": ["string"],
+  "confidence": "high | medium | low"
+}
 ```
 
-This helps you evaluate the answer instead of blindly trusting it.
+This makes AI output directly usable in scripts and automation without parsing prose.
 
-### Use the AI to improve your own prompts
+### Decompose complex tasks
+
+AI degrades on very long, complex single prompts. A prompt that asks for ten things at once will produce worse results than ten focused prompts in sequence.
+
+Instead of:
+```
+Design a complete homelab infrastructure with networking, storage,
+backup, monitoring, security hardening, and documentation.
+```
+
+Do it in stages:
+```
+Step 1: Let's design the network architecture first.
+My constraints are: [constraints].
+Focus only on network topology for now.
+```
+
+Once you're satisfied with that layer, move to the next. This gives you control at each step and prevents the AI from making compounding assumptions.
+
+### Meta-prompting — ask the AI how to prompt it
 
 ```
-I want to ask you about [topic] but I'm not sure how to frame the
-question to get the most useful answer. How should I prompt you?
+I want to ask you about setting up a VLAN-segmented homelab network
+but I'm not sure how to frame the question to get the most useful answer.
+What information do you need from me and how should I structure the prompt?
 ```
 
-Meta-prompting. The AI will tell you what information it needs to give you a better response.
+The AI will tell you exactly what context it needs. Genuinely useful when you're entering unfamiliar territory and don't know what you don't know.
+
+### Iterative refinement — treat it as a conversation
+
+Don't expect perfection on the first prompt. Iterate with targeted feedback:
+
+```
+The second paragraph is too vague. Rewrite it with a concrete example
+using nginx as the web server.
+```
+
+```
+Good, but the tone is too formal. Make it sound more like a blog post
+written by a practitioner, not a documentation writer.
+```
+
+The skill is in identifying precisely what's wrong, not in re-asking the whole question.
 
 ---
 
-## Part 4: Specific Use Cases
+## Part 4: The Sycophancy Problem
+
+This is the most important thing to understand about AI behavior — and the most dangerous trap.
+
+AI assistants are trained with feedback from humans who tend to rate confident, agreeable, validating responses as better. The result: AI has a systematic bias toward telling you what you want to hear. It will agree with your premises, validate your plans, and soften criticism — unless you explicitly work against this tendency.
+
+**How it manifests:**
+- You propose a flawed plan and the AI finds ways to make it work instead of questioning whether it should
+- You push back on a correct AI answer and it backs down even though it was right
+- The AI adds qualifications and softening to criticism that should be blunt
+- Confident-sounding answers to questions the AI actually has low certainty about
+
+**How to fight it:**
+
+Explicitly instruct the AI not to agree with you:
+```
+Do not validate my assumptions. Challenge them.
+If I am wrong about something, tell me directly.
+I prefer an uncomfortable correct answer over a comfortable wrong one.
+```
+
+Ask it to take the opposing position:
+```
+Argue against my approach as strongly as you can.
+```
+
+After it criticizes your plan, push further:
+```
+You were too gentle. What's the harshest realistic criticism of this approach?
+```
+
+Check whether it actually changed its mind or just capitulated:
+```
+Earlier you said X. I pushed back. Did you change your position because
+I gave you new information, or because I disagreed with you?
+```
+
+This last prompt is particularly revealing. A good AI will tell you honestly which it was.
+
+---
+
+## Part 5: Specific Use Cases
 
 ### Writing and editing
 
-For writing, be explicit about:
-- **Audience**: who is reading this?
-- **Tone**: technical, casual, formal, opinionated?
-- **Length**: approximate word count
-- **Structure**: headers, bullet points, prose?
-- **What to avoid**: clichés, filler phrases, passive voice
+For writing, be explicit about audience, tone, length, structure, and what to avoid. For style matching, use few-shot prompting — paste examples, then ask for more.
 
 For editing existing text:
 ```
@@ -260,12 +381,7 @@ add meaning. Do not change the technical content or the author's voice.
 
 ### Code and scripting
 
-Always provide:
-- The language and version
-- The OS and environment
-- What the code currently does
-- What it should do instead
-- Any constraints (no external dependencies, must run as non-root, etc.)
+Always provide the language and version, the OS and environment, what the code currently does, what it should do, and any constraints.
 
 ```
 Write a bash script for Debian 13 that monitors disk usage on /dev/sda1
@@ -274,125 +390,147 @@ systemd timer every 30 minutes. No external dependencies beyond curl.
 Include the systemd unit files.
 ```
 
-For debugging, paste the exact error:
-```
-This command returns the following error:
-[exact error message]
+For debugging, paste the exact error. After getting a fix, ask: `What was the root cause and what would have prevented it?` — you learn more from that than from the fix itself.
 
-Here is the relevant section of the config:
+### Security and threat modeling
+
+```
+I'm setting up [system]. My threat model is: [who you're protecting against,
+what assets matter, what you're willing to accept].
+
+Review this configuration for weaknesses. Assume I want to know about
+every issue, including minor ones. Don't prioritize readability over accuracy.
+
 [paste config]
-
-What is causing this and how do I fix it?
 ```
 
-### Research and analysis
-
-```
-I'm trying to understand the trade-offs between WireGuard and OpenVPN
-for a homelab setup where I need road warrior access from a laptop.
-I already know both use strong encryption. Focus on: connection
-reliability on mobile networks, kill switch behavior, and ease of
-key management. Don't give me an introductory explanation of what
-a VPN is.
-```
+Always follow up with: `What attack surface am I not thinking about?`
 
 ### Learning new topics
 
 ```
-I want to understand how LUKS full disk encryption works at a
-technical level — not how to use it, but how it works internally:
-key derivation, the LUKS header structure, what happens at boot.
-Assume I understand Linux, filesystems, and basic cryptography
-concepts. Use analogies where they help, but don't oversimplify.
+I want to understand how LUKS full disk encryption works at a technical
+level — not how to use it, but how it works internally: key derivation,
+the LUKS header structure, what happens at boot.
+Assume I understand Linux, filesystems, and basic cryptography concepts.
+```
+
+After the explanation:
+```
+What are the most common misconceptions people have about this topic?
+What do most tutorials get wrong or oversimplify?
+```
+
+This surfaces the nuance that introductory explanations omit.
+
+### Decision analysis
+
+```
+I'm deciding between [option A] and [option B] for [use case].
+My constraints are: [list].
+My priorities are: [list in order of importance].
+
+Analyze the trade-offs and give a recommendation.
+Then give me the strongest argument against your recommendation.
+Then tell me under what circumstances you'd change your answer.
 ```
 
 ---
 
-## Part 5: What AI Is Bad At
+## Part 6: What AI Is Bad At
 
-Knowing the limits is as important as knowing the techniques.
+**Verifying current facts.** AI knowledge has a cutoff date and can be wrong about recent events or current software versions. Always verify with primary sources.
 
-**Verifying current facts.** AI knowledge has a cutoff date and can be wrong about recent events, current software versions, or anything that changes frequently. Always verify with primary sources.
+**Math and arithmetic.** AI can reason about math conceptually but makes calculation errors. Use it to set up problems, not to execute them.
 
-**Math involving large numbers or multi-step calculations.** AI can reason about math conceptually but makes arithmetic errors. Use it to set up problems, not to execute them.
+**Knowing what it doesn't know.** AI can be confidently wrong. It doesn't reliably flag uncertainty unless you ask. The more obscure the topic, the higher the risk.
 
-**Knowing what it doesn't know.** AI can be confidently wrong. It doesn't always flag uncertainty. The more obscure the topic, the higher the risk of plausible-sounding but incorrect information.
+**Your specific environment.** The AI doesn't know your exact setup or versions unless you provide them. Lack of context is the most common cause of wrong answers.
 
 **Legal, medical, and financial specifics.** Use AI for general understanding, never for specific advice in high-stakes domains.
 
-**Your specific environment.** The AI doesn't know your exact setup, your specific versions, or your constraints unless you tell it. When something doesn't work, the most common reason is that you didn't give it enough context.
+**Highly novel or recent topics.** If something was published after the model's training cutoff, the AI either doesn't know it or will confabulate. Ask about the cutoff date when relevant.
 
 ---
 
-## Part 6: Practical Workflow
+## Part 7: Practical Workflow
 
-Here is the workflow that consistently produces the best results:
-
-1. **Before prompting**: write down in one sentence what you actually need. If you can't do this, you're not ready to prompt.
-
-2. **First prompt**: include role, context, task, format, constraints, and what to avoid.
-
-3. **Read the output critically**: is it answering the right question? Is it making assumptions you don't agree with?
-
-4. **Iterate with targeted feedback**: don't re-ask the whole question. Address the specific part that was wrong.
-
-5. **Verify anything factual**: especially for technical configurations, check the documentation.
-
-6. **Extract and adapt**: AI output is a starting point, not a final product. Edit it, adapt it to your context, make it yours.
+1. **Before prompting**: write in one sentence what you actually need. If you can't, you're not ready to prompt.
+2. **First prompt**: include role, context, task, format, constraints, negative constraints, and audience.
+3. **Read critically**: is it answering the right question? Is it being suspiciously agreeable?
+4. **Self-critique pass**: ask it to criticize its own response before you iterate.
+5. **Iterate with targeted feedback**: address the specific part that was wrong, don't re-ask the whole question.
+6. **Check confidence**: for anything factual or technical, ask what it's uncertain about.
+7. **Verify independently**: especially for configurations, commands, and version-specific behavior.
+8. **Extract and adapt**: AI output is a starting point, not a final product.
 
 ---
 
 ## Prompt Templates
 
-A few ready-to-use templates:
-
 **Technical explanation:**
 ```
-Explain [topic] to someone who [audience description].
+You are [role]. Explain [topic] to someone who [audience description].
 Focus on [specific aspect]. Avoid [what to avoid].
-Use [format: prose / bullet points / examples].
+After explaining, tell me what most people get wrong about this.
 ```
 
 **Blog post:**
 ```
 Write a [word count] blog post about [topic] for [audience].
 Tone: [technical / casual / opinionated].
-Structure: [introduction / sections / conclusion or free-form].
-Do not use: [list of phrases/patterns to avoid].
+Do not use: [list of phrases to avoid].
 Key points to cover: [list].
+Here is an example of the writing style I want: [example paragraph].
 ```
 
 **Code task:**
 ```
-Write a [language] script/function that [does what].
+Write a [language] script that [does what].
 Environment: [OS, version, constraints].
-It should handle: [edge cases].
+Edge cases to handle: [list].
 Do not use: [dependencies to avoid].
-Include: [comments / error handling / tests].
+After writing it, identify any weaknesses or unhandled edge cases.
 ```
 
-**Problem diagnosis:**
+**Debugging:**
 ```
-I'm seeing this problem: [describe problem].
-Environment: [relevant details].
-What I've tried: [what you've already done].
-Error or symptom: [exact output].
-What is causing this and what are the steps to fix it?
+Environment: [OS, versions, relevant details].
+Problem: [describe symptom].
+What I've tried: [list].
+Exact error: [paste].
+Relevant config: [paste].
+
+Diagnose the root cause. Then tell me what would have prevented this.
 ```
 
 **Decision analysis:**
 ```
-I'm deciding between [option A] and [option B] for [use case].
-My constraints are: [list].
-My priorities are: [list in order].
-Analyze the trade-offs and give me a recommendation.
-Challenge any assumptions I might be making.
+I'm deciding between [A] and [B] for [use case].
+Constraints: [list]. Priorities in order: [list].
+
+Give a recommendation.
+Then argue against it as strongly as you can.
+Then tell me what information would change your answer.
+```
+
+**Security review:**
+```
+Review this [config / script / architecture] for security weaknesses.
+Threat model: [who I'm protecting against, what assets matter].
+Be exhaustive. Include minor issues. Don't soften findings.
+[paste content]
+After the review: what attack surface am I probably not thinking about?
 ```
 
 ---
 
 ## Final Thought
 
-The gap between a mediocre AI interaction and a genuinely useful one is almost entirely determined by the quality of the prompt. AI assistants are powerful reasoning and generation tools — but they work *with* you, not *for* you. The more clearly you can define what you need, the more precisely you can give it context, and the more critically you can evaluate its output, the more value you'll extract.
+The gap between a mediocre AI interaction and a genuinely useful one is determined almost entirely by the quality of the prompt — and by understanding the system's biases and limitations.
 
-Treat it as a highly capable collaborator with no memory, no context about your life, and no awareness of your specific situation unless you provide all of that explicitly. Do that consistently, and the results will surprise you.
+AI assistants will agree with you when they shouldn't, sound confident when they're uncertain, and produce plausible-sounding nonsense when they don't know the answer. These are not bugs that will be fixed. They are structural properties of how these systems work.
+
+The techniques in this guide exist to work around those properties: few-shot examples to guide output precisely, self-critique to surface weaknesses, steelmanning to break the agreement bias, confidence prompts to expose uncertainty, and structured decomposition to maintain quality on complex tasks.
+
+Use AI as a highly capable collaborator with no memory, no context about your situation, a systematic bias toward agreement, and occasional blind confidence. Give it context explicitly, challenge it deliberately, and verify anything consequential. Do that consistently, and the results will be significantly better than what most people get.
