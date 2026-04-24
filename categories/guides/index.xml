@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Guides on Padrasto's Linux Lab</title><link>https://padrasto.github.io/categories/guides/</link><description>Recent content in Guides on Padrasto's Linux Lab</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Fri, 24 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://padrasto.github.io/categories/guides/index.xml" rel="self" type="application/rss+xml"/><item><title>How to Get the Most Out of AI: A Complete Practical Guide</title><link>https://padrasto.github.io/post/how-to-get-the-most-out-of-ai/</link><pubDate>Fri, 24 Apr 2026 00:00:00 +0000</pubDate><guid>https://padrasto.github.io/post/how-to-get-the-most-out-of-ai/</guid><description>&lt;p&gt;AI assistants are genuinely useful tools — but most people use roughly 10% of their potential. They ask a vague question, get a mediocre answer, and conclude that AI is overhyped. The problem is almost never the AI. It&amp;rsquo;s the prompt.&lt;/p&gt;
-&lt;p&gt;This guide covers everything I&amp;rsquo;ve learned about extracting real value from AI: how to structure prompts, how to think about context, advanced techniques, and the mental models that separate people who get great results from those who don&amp;rsquo;t.&lt;/p&gt;
+&lt;p&gt;This guide covers everything I&amp;rsquo;ve learned about extracting real value from AI: how to structure prompts, how to think about context, advanced techniques, the traps to avoid, and the mental models that separate people who get great results from those who don&amp;rsquo;t.&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id="the-fundamental-mental-model"&gt;The Fundamental Mental Model
 &lt;/h2&gt;&lt;p&gt;Before any technique, you need the right mental model.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;AI is not a search engine.&lt;/strong&gt; Don&amp;rsquo;t ask it for a list of links or a summary of what&amp;rsquo;s on the internet. It&amp;rsquo;s a reasoning system trained on vast amounts of text that can generate, analyze, transform, and critique content.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;AI is not a search engine.&lt;/strong&gt; Don&amp;rsquo;t ask it for links or summaries of what&amp;rsquo;s on the internet. It&amp;rsquo;s a reasoning system trained on vast amounts of text that can generate, analyze, transform, and critique content.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;AI is not a magic oracle.&lt;/strong&gt; It doesn&amp;rsquo;t &amp;ldquo;know&amp;rdquo; things the way you know your own name. It predicts likely, coherent, useful completions based on context. The better the context you give, the better the output.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;The prompt is the program.&lt;/strong&gt; Every word you write shapes the output. Vague input produces vague output. Precise, structured input produces precise, structured output.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;AI has no memory between conversations.&lt;/strong&gt; Every session starts from zero unless you explicitly provide history. This is the most commonly forgotten fact and the source of most disappointing interactions.&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id="part-1-prompt-structure-basics"&gt;Part 1: Prompt Structure Basics
 &lt;/h2&gt;&lt;h3 id="be-specific-about-what-you-want"&gt;Be specific about what you want
@@ -15,7 +16,7 @@
 &lt;pre tabindex="0"&gt;&lt;code&gt;Write a 600-word blog post for intermediate Linux users explaining the
 difference between AppArmor and SELinux. Focus on practical use cases,
 not theory. Use a direct, technical tone. No marketing language.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The second prompt gives the AI: a length target, an audience, a scope, a focus, and a tone. Every one of those constraints improves the output.&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The second prompt gives the AI a length target, an audience, a scope, a focus, and a tone. Every one of those constraints improves the output.&lt;/p&gt;
 &lt;h3 id="define-the-role"&gt;Define the role
 &lt;/h3&gt;&lt;p&gt;Priming the AI with a role dramatically shifts the quality and style of responses:&lt;/p&gt;
 &lt;pre tabindex="0"&gt;&lt;code&gt;You are a senior Linux system administrator with 15 years of experience
@@ -29,8 +30,8 @@ basics but has never used containers before.
 &lt;pre tabindex="0"&gt;&lt;code&gt;Explain Docker networking assuming the reader is a senior DevOps engineer
 already familiar with namespaces and cgroups.
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Same topic, completely different output.&lt;/p&gt;
-&lt;h3 id="define-the-format"&gt;Define the format
-&lt;/h3&gt;&lt;p&gt;If you need structured output, ask for it explicitly:&lt;/p&gt;
+&lt;h3 id="define-the-format-explicitly"&gt;Define the format explicitly
+&lt;/h3&gt;&lt;p&gt;If you need structured output, ask for it:&lt;/p&gt;
 &lt;pre tabindex="0"&gt;&lt;code&gt;Give me the answer as a markdown table with three columns:
 Tool | Use Case | Limitations
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Or:&lt;/p&gt;
@@ -39,11 +40,16 @@ Tool | Use Case | Limitations
 2. The three main advantages
 3. The three main risks
 4. A recommendation
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id="use-negative-constraints"&gt;Use negative constraints
+&lt;/h3&gt;&lt;p&gt;Tell the AI what you don&amp;rsquo;t want — this is underused and extremely effective:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Write a blog introduction about WireGuard. Do not use phrases like
+&amp;#34;In today&amp;#39;s world&amp;#34;, &amp;#34;In this article we will&amp;#34;, or &amp;#34;game-changer&amp;#34;.
+Do not start with a question. Be direct and assume the reader already
+knows what a VPN is.
 &lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
 &lt;h2 id="part-2-context-is-everything"&gt;Part 2: Context is Everything
-&lt;/h2&gt;&lt;h3 id="the-more-context-the-better-the-output"&gt;The more context, the better the output
-&lt;/h3&gt;&lt;p&gt;AI has no memory between conversations (unless explicitly provided). Every conversation starts from zero. Front-load everything relevant:&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Bad:&lt;/strong&gt;&lt;/p&gt;
+&lt;/h2&gt;&lt;h3 id="front-load-everything-relevant"&gt;Front-load everything relevant
+&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;Bad:&lt;/strong&gt;&lt;/p&gt;
 &lt;pre tabindex="0"&gt;&lt;code&gt;Fix this script.
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Good:&lt;/strong&gt;&lt;/p&gt;
 &lt;pre tabindex="0"&gt;&lt;code&gt;I&amp;#39;m running Debian 13 on an x86_64 machine with a 6.12 kernel.
@@ -56,185 +62,245 @@ and sends me an email on failure via msmtp.
 [paste script here]
 &lt;/code&gt;&lt;/pre&gt;&lt;h3 id="paste-the-actual-content"&gt;Paste the actual content
 &lt;/h3&gt;&lt;p&gt;If you&amp;rsquo;re asking about a config file, a script, an error message, or a document — paste it. Don&amp;rsquo;t describe it. The AI works with real content far better than with your description of content.&lt;/p&gt;
-&lt;h3 id="provide-negative-examples"&gt;Provide negative examples
-&lt;/h3&gt;&lt;p&gt;Tell the AI what you &lt;em&gt;don&amp;rsquo;t&lt;/em&gt; want:&lt;/p&gt;
-&lt;pre tabindex="0"&gt;&lt;code&gt;Write a blog introduction about WireGuard. Do not use phrases like
-&amp;#34;In today&amp;#39;s world&amp;#34;, &amp;#34;In this article we will&amp;#34;, or &amp;#34;game-changer&amp;#34;.
-Do not start with a question. Be direct and assume the reader already
-knows what a VPN is.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Negative constraints are underused and extremely effective.&lt;/p&gt;
+&lt;h3 id="when-to-start-a-new-conversation"&gt;When to start a new conversation
+&lt;/h3&gt;&lt;p&gt;Context accumulates — and degrades. In a very long conversation, early instructions get diluted, the AI starts losing track of your constraints, and output quality drops noticeably.&lt;/p&gt;
+&lt;p&gt;Start a new conversation when:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You&amp;rsquo;ve shifted to a completely different topic&lt;/li&gt;
+&lt;li&gt;The AI starts ignoring constraints you set early on&lt;/li&gt;
+&lt;li&gt;Responses feel increasingly generic&lt;/li&gt;
+&lt;li&gt;The conversation has gone on for 30+ exchanges&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A fresh conversation with a well-crafted opening prompt will always outperform a degraded long conversation.&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id="part-3-advanced-techniques"&gt;Part 3: Advanced Techniques
-&lt;/h2&gt;&lt;h3 id="chain-of-thought--make-the-ai-reason-step-by-step"&gt;Chain of Thought — make the AI reason step by step
-&lt;/h3&gt;&lt;p&gt;For complex problems, explicitly ask the AI to think through the problem before giving an answer:&lt;/p&gt;
+&lt;/h2&gt;&lt;h3 id="few-shot-prompting--the-most-powerful-technique-most-people-ignore"&gt;Few-shot prompting — the most powerful technique most people ignore
+&lt;/h3&gt;&lt;p&gt;Instead of describing the output you want, show it. Give the AI two or three examples of exactly what you&amp;rsquo;re looking for, then ask it to produce more in the same style.&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Here are two examples of the writing style I want:
+
+[Example 1: paste a paragraph you like]
+
+[Example 2: paste another paragraph you like]
+
+Now write a section about WireGuard key management in the same style.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The AI pattern-matches with remarkable precision. This works for writing style, code structure, documentation format, response length — anything where you can provide a reference example. It consistently outperforms trying to describe the style in words.&lt;/p&gt;
+&lt;h3 id="chain-of-thought--make-the-ai-reason-step-by-step"&gt;Chain of Thought — make the AI reason step by step
+&lt;/h3&gt;&lt;p&gt;For complex problems, explicitly ask the AI to think through the problem before answering:&lt;/p&gt;
 &lt;pre tabindex="0"&gt;&lt;code&gt;Before answering, think through this step by step. Then give me
 your conclusion.
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Or simply add: &lt;code&gt;Let's think through this carefully.&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;This technique significantly improves accuracy on logic, math, and multi-step reasoning problems. The AI produces better answers when it &amp;ldquo;shows its work.&amp;rdquo;&lt;/p&gt;
-&lt;h3 id="the-socratic-approach--ask-it-to-challenge-you"&gt;The Socratic approach — ask it to challenge you
+&lt;p&gt;This significantly improves accuracy on logic, multi-step reasoning, and technical diagnosis. The AI produces better answers when it shows its work. Don&amp;rsquo;t skip this for anything non-trivial.&lt;/p&gt;
+&lt;h3 id="make-the-ai-criticize-its-own-response"&gt;Make the AI criticize its own response
+&lt;/h3&gt;&lt;p&gt;After getting an answer, ask:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Now criticize the response you just gave. What is wrong, incomplete,
+oversimplified, or based on assumptions that might not hold?
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is one of the most powerful techniques in this guide. AI has a strong tendency toward producing plausible, confident-sounding answers. Forcing it to self-critique surfaces weaknesses it wouldn&amp;rsquo;t otherwise flag. Use this for anything where accuracy matters.&lt;/p&gt;
+&lt;h3 id="steelmanning--force-genuine-analysis"&gt;Steelmanning — force genuine analysis
+&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;Give me the strongest possible argument against what I just proposed.
+Don&amp;#39;t soften it.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;AI tends to validate and agree with the user. Explicitly asking for the opposing argument forces it to engage analytically instead of sycophantically. Pair this with the self-critique technique for decisions with real consequences.&lt;/p&gt;
+&lt;h3 id="the-socratic-approach--use-it-as-an-adversarial-reviewer"&gt;The Socratic approach — use it as an adversarial reviewer
 &lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;I&amp;#39;m planning to set up a Tor hidden service for my personal blog.
 Here is my current plan: [describe plan].
 
 Act as a security auditor. Challenge every assumption. Point out what
 I&amp;#39;m getting wrong, what I&amp;#39;m missing, and what risks I haven&amp;#39;t considered.
 Be direct and don&amp;#39;t soften the criticism.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Using AI as an adversarial reviewer is one of the most powerful but underused techniques.&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Most people use AI to execute tasks. Using it to challenge your thinking is often more valuable.&lt;/p&gt;
+&lt;h3 id="ask-for-confidence-levels"&gt;Ask for confidence levels
+&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;How confident are you in this answer?
+What should I independently verify before acting on it?
+What are you least certain about?
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;AI knows when it&amp;rsquo;s uncertain — but it won&amp;rsquo;t tell you unless you ask. This is especially important for technical configurations, version-specific behavior, and anything that changes frequently.&lt;/p&gt;
+&lt;h3 id="ask-for-alternatives"&gt;Ask for alternatives
+&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;Give me three different ways to approach this problem.
+For each one, explain the trade-offs and when you&amp;#39;d choose it over the others.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This forces the AI to explore the solution space instead of defaulting to the first plausible answer.&lt;/p&gt;
+&lt;h3 id="use-xml-tags-for-complex-prompts"&gt;Use XML tags for complex prompts
+&lt;/h3&gt;&lt;p&gt;For long, multi-part prompts, structure helps the AI parse exactly what you&amp;rsquo;re asking:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"&gt;&lt;code class="language-xml" data-lang="xml"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;context&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;I run a homelab with three machines: a desktop running Debian 13,
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;a ThinkPad T480 as a portable server, and a ThinkPad X270 as
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;a dedicated home server running CasaOS.
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;/context&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;task&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;Design a backup strategy that covers all three machines with
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;off-site redundancy, using only open-source tools and no cloud services.
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;/task&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;constraints&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;- Budget: zero (no paid services)
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;- Internet: 100Mbps asymmetric fiber
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;- Storage available: 2TB on the X270
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;- Must work without a static IP
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;/constraints&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;format&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;Structured plan with: architecture overview, tool list, implementation
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;steps, and failure scenarios.
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;/format&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="request-structured-output-for-programmatic-use"&gt;Request structured output for programmatic use
+&lt;/h3&gt;&lt;p&gt;If you&amp;rsquo;re integrating AI output into a workflow or script, ask for strict JSON with a defined schema:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Return your answer as JSON only, with no explanation, no markdown
+code fences, and no preamble. Use this exact structure:
+
+{
+ &amp;#34;recommendation&amp;#34;: &amp;#34;string&amp;#34;,
+ &amp;#34;reasons&amp;#34;: [&amp;#34;string&amp;#34;],
+ &amp;#34;risks&amp;#34;: [&amp;#34;string&amp;#34;],
+ &amp;#34;confidence&amp;#34;: &amp;#34;high | medium | low&amp;#34;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This makes AI output directly usable in scripts and automation without parsing prose.&lt;/p&gt;
+&lt;h3 id="decompose-complex-tasks"&gt;Decompose complex tasks
+&lt;/h3&gt;&lt;p&gt;AI degrades on very long, complex single prompts. A prompt that asks for ten things at once will produce worse results than ten focused prompts in sequence.&lt;/p&gt;
+&lt;p&gt;Instead of:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Design a complete homelab infrastructure with networking, storage,
+backup, monitoring, security hardening, and documentation.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Do it in stages:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Step 1: Let&amp;#39;s design the network architecture first.
+My constraints are: [constraints].
+Focus only on network topology for now.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Once you&amp;rsquo;re satisfied with that layer, move to the next. This gives you control at each step and prevents the AI from making compounding assumptions.&lt;/p&gt;
+&lt;h3 id="meta-prompting--ask-the-ai-how-to-prompt-it"&gt;Meta-prompting — ask the AI how to prompt it
+&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;I want to ask you about setting up a VLAN-segmented homelab network
+but I&amp;#39;m not sure how to frame the question to get the most useful answer.
+What information do you need from me and how should I structure the prompt?
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The AI will tell you exactly what context it needs. Genuinely useful when you&amp;rsquo;re entering unfamiliar territory and don&amp;rsquo;t know what you don&amp;rsquo;t know.&lt;/p&gt;
 &lt;h3 id="iterative-refinement--treat-it-as-a-conversation"&gt;Iterative refinement — treat it as a conversation
-&lt;/h3&gt;&lt;p&gt;Don&amp;rsquo;t expect perfection on the first prompt. Iterate:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Get a first draft&lt;/li&gt;
-&lt;li&gt;Identify what&amp;rsquo;s wrong or missing&lt;/li&gt;
-&lt;li&gt;Give targeted feedback&lt;/li&gt;
-&lt;li&gt;Repeat&lt;/li&gt;
-&lt;/ol&gt;
+&lt;/h3&gt;&lt;p&gt;Don&amp;rsquo;t expect perfection on the first prompt. Iterate with targeted feedback:&lt;/p&gt;
 &lt;pre tabindex="0"&gt;&lt;code&gt;The second paragraph is too vague. Rewrite it with a concrete example
 using nginx as the web server.
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;Good, but the tone is too formal. Make it sound more like a blog post
 written by a practitioner, not a documentation writer.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Each iteration sharpens the output.&lt;/p&gt;
-&lt;h3 id="ask-for-alternatives"&gt;Ask for alternatives
-&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;Give me three different ways to approach this problem. For each one,
-explain the trade-offs.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This forces the AI to explore the solution space instead of defaulting to the first plausible answer.&lt;/p&gt;
-&lt;h3 id="use-xml-or-structured-tags-for-complex-prompts"&gt;Use XML or structured tags for complex prompts
-&lt;/h3&gt;&lt;p&gt;For long, multi-part prompts, structure helps the AI parse what you&amp;rsquo;re asking:&lt;/p&gt;
-&lt;pre tabindex="0"&gt;&lt;code&gt;&amp;lt;context&amp;gt;
-I run a homelab with three machines: a desktop running Debian 13,
-a ThinkPad T480 as a portable server, and a ThinkPad X270 as
-a dedicated home server running CasaOS.
-&amp;lt;/context&amp;gt;
-
-&amp;lt;task&amp;gt;
-Design a backup strategy that covers all three machines with
-off-site redundancy, using only open-source tools and no cloud services.
-&amp;lt;/task&amp;gt;
-
-&amp;lt;constraints&amp;gt;
-- Budget: zero (no paid services)
-- Internet: 100Mbps asymmetric fiber
-- Storage available: 2TB on the X270
-- Must work without a static IP
-&amp;lt;/constraints&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id="ask-for-the-reasoning-not-just-the-answer"&gt;Ask for the reasoning, not just the answer
-&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;Why is this the right approach? What are the assumptions behind it?
-Under what circumstances would this be wrong?
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This helps you evaluate the answer instead of blindly trusting it.&lt;/p&gt;
-&lt;h3 id="use-the-ai-to-improve-your-own-prompts"&gt;Use the AI to improve your own prompts
-&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;I want to ask you about [topic] but I&amp;#39;m not sure how to frame the
-question to get the most useful answer. How should I prompt you?
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Meta-prompting. The AI will tell you what information it needs to give you a better response.&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The skill is in identifying precisely what&amp;rsquo;s wrong, not in re-asking the whole question.&lt;/p&gt;
 &lt;hr&gt;
-&lt;h2 id="part-4-specific-use-cases"&gt;Part 4: Specific Use Cases
-&lt;/h2&gt;&lt;h3 id="writing-and-editing"&gt;Writing and editing
-&lt;/h3&gt;&lt;p&gt;For writing, be explicit about:&lt;/p&gt;
+&lt;h2 id="part-4-the-sycophancy-problem"&gt;Part 4: The Sycophancy Problem
+&lt;/h2&gt;&lt;p&gt;This is the most important thing to understand about AI behavior — and the most dangerous trap.&lt;/p&gt;
+&lt;p&gt;AI assistants are trained with feedback from humans who tend to rate confident, agreeable, validating responses as better. The result: AI has a systematic bias toward telling you what you want to hear. It will agree with your premises, validate your plans, and soften criticism — unless you explicitly work against this tendency.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;How it manifests:&lt;/strong&gt;&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;Audience&lt;/strong&gt;: who is reading this?&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Tone&lt;/strong&gt;: technical, casual, formal, opinionated?&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Length&lt;/strong&gt;: approximate word count&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Structure&lt;/strong&gt;: headers, bullet points, prose?&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;What to avoid&lt;/strong&gt;: clichés, filler phrases, passive voice&lt;/li&gt;
+&lt;li&gt;You propose a flawed plan and the AI finds ways to make it work instead of questioning whether it should&lt;/li&gt;
+&lt;li&gt;You push back on a correct AI answer and it backs down even though it was right&lt;/li&gt;
+&lt;li&gt;The AI adds qualifications and softening to criticism that should be blunt&lt;/li&gt;
+&lt;li&gt;Confident-sounding answers to questions the AI actually has low certainty about&lt;/li&gt;
 &lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;How to fight it:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Explicitly instruct the AI not to agree with you:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Do not validate my assumptions. Challenge them.
+If I am wrong about something, tell me directly.
+I prefer an uncomfortable correct answer over a comfortable wrong one.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Ask it to take the opposing position:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Argue against my approach as strongly as you can.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;After it criticizes your plan, push further:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;You were too gentle. What&amp;#39;s the harshest realistic criticism of this approach?
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Check whether it actually changed its mind or just capitulated:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Earlier you said X. I pushed back. Did you change your position because
+I gave you new information, or because I disagreed with you?
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This last prompt is particularly revealing. A good AI will tell you honestly which it was.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id="part-5-specific-use-cases"&gt;Part 5: Specific Use Cases
+&lt;/h2&gt;&lt;h3 id="writing-and-editing"&gt;Writing and editing
+&lt;/h3&gt;&lt;p&gt;For writing, be explicit about audience, tone, length, structure, and what to avoid. For style matching, use few-shot prompting — paste examples, then ask for more.&lt;/p&gt;
 &lt;p&gt;For editing existing text:&lt;/p&gt;
 &lt;pre tabindex="0"&gt;&lt;code&gt;Edit this text for clarity and conciseness. Cut anything that doesn&amp;#39;t
 add meaning. Do not change the technical content or the author&amp;#39;s voice.
 [paste text]
 &lt;/code&gt;&lt;/pre&gt;&lt;h3 id="code-and-scripting"&gt;Code and scripting
-&lt;/h3&gt;&lt;p&gt;Always provide:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;The language and version&lt;/li&gt;
-&lt;li&gt;The OS and environment&lt;/li&gt;
-&lt;li&gt;What the code currently does&lt;/li&gt;
-&lt;li&gt;What it should do instead&lt;/li&gt;
-&lt;li&gt;Any constraints (no external dependencies, must run as non-root, etc.)&lt;/li&gt;
-&lt;/ul&gt;
+&lt;/h3&gt;&lt;p&gt;Always provide the language and version, the OS and environment, what the code currently does, what it should do, and any constraints.&lt;/p&gt;
 &lt;pre tabindex="0"&gt;&lt;code&gt;Write a bash script for Debian 13 that monitors disk usage on /dev/sda1
 and sends an alert via ntfy.sh if usage exceeds 85%. It should run via
 systemd timer every 30 minutes. No external dependencies beyond curl.
 Include the systemd unit files.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For debugging, paste the exact error:&lt;/p&gt;
-&lt;pre tabindex="0"&gt;&lt;code&gt;This command returns the following error:
-[exact error message]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For debugging, paste the exact error. After getting a fix, ask: &lt;code&gt;What was the root cause and what would have prevented it?&lt;/code&gt; — you learn more from that than from the fix itself.&lt;/p&gt;
+&lt;h3 id="security-and-threat-modeling"&gt;Security and threat modeling
+&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;I&amp;#39;m setting up [system]. My threat model is: [who you&amp;#39;re protecting against,
+what assets matter, what you&amp;#39;re willing to accept].
 
-Here is the relevant section of the config:
+Review this configuration for weaknesses. Assume I want to know about
+every issue, including minor ones. Don&amp;#39;t prioritize readability over accuracy.
+
 [paste config]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Always follow up with: &lt;code&gt;What attack surface am I not thinking about?&lt;/code&gt;&lt;/p&gt;
+&lt;h3 id="learning-new-topics"&gt;Learning new topics
+&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;I want to understand how LUKS full disk encryption works at a technical
+level — not how to use it, but how it works internally: key derivation,
+the LUKS header structure, what happens at boot.
+Assume I understand Linux, filesystems, and basic cryptography concepts.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;After the explanation:&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;What are the most common misconceptions people have about this topic?
+What do most tutorials get wrong or oversimplify?
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This surfaces the nuance that introductory explanations omit.&lt;/p&gt;
+&lt;h3 id="decision-analysis"&gt;Decision analysis
+&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;I&amp;#39;m deciding between [option A] and [option B] for [use case].
+My constraints are: [list].
+My priorities are: [list in order of importance].
 
-What is causing this and how do I fix it?
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id="research-and-analysis"&gt;Research and analysis
-&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;I&amp;#39;m trying to understand the trade-offs between WireGuard and OpenVPN
-for a homelab setup where I need road warrior access from a laptop.
-I already know both use strong encryption. Focus on: connection
-reliability on mobile networks, kill switch behavior, and ease of
-key management. Don&amp;#39;t give me an introductory explanation of what
-a VPN is.
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id="learning-new-topics"&gt;Learning new topics
-&lt;/h3&gt;&lt;pre tabindex="0"&gt;&lt;code&gt;I want to understand how LUKS full disk encryption works at a
-technical level — not how to use it, but how it works internally:
-key derivation, the LUKS header structure, what happens at boot.
-Assume I understand Linux, filesystems, and basic cryptography
-concepts. Use analogies where they help, but don&amp;#39;t oversimplify.
+Analyze the trade-offs and give a recommendation.
+Then give me the strongest argument against your recommendation.
+Then tell me under what circumstances you&amp;#39;d change your answer.
 &lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-&lt;h2 id="part-5-what-ai-is-bad-at"&gt;Part 5: What AI Is Bad At
-&lt;/h2&gt;&lt;p&gt;Knowing the limits is as important as knowing the techniques.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Verifying current facts.&lt;/strong&gt; AI knowledge has a cutoff date and can be wrong about recent events, current software versions, or anything that changes frequently. Always verify with primary sources.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Math involving large numbers or multi-step calculations.&lt;/strong&gt; AI can reason about math conceptually but makes arithmetic errors. Use it to set up problems, not to execute them.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Knowing what it doesn&amp;rsquo;t know.&lt;/strong&gt; AI can be confidently wrong. It doesn&amp;rsquo;t always flag uncertainty. The more obscure the topic, the higher the risk of plausible-sounding but incorrect information.&lt;/p&gt;
+&lt;h2 id="part-6-what-ai-is-bad-at"&gt;Part 6: What AI Is Bad At
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Verifying current facts.&lt;/strong&gt; AI knowledge has a cutoff date and can be wrong about recent events or current software versions. Always verify with primary sources.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Math and arithmetic.&lt;/strong&gt; AI can reason about math conceptually but makes calculation errors. Use it to set up problems, not to execute them.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Knowing what it doesn&amp;rsquo;t know.&lt;/strong&gt; AI can be confidently wrong. It doesn&amp;rsquo;t reliably flag uncertainty unless you ask. The more obscure the topic, the higher the risk.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Your specific environment.&lt;/strong&gt; The AI doesn&amp;rsquo;t know your exact setup or versions unless you provide them. Lack of context is the most common cause of wrong answers.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Legal, medical, and financial specifics.&lt;/strong&gt; Use AI for general understanding, never for specific advice in high-stakes domains.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Your specific environment.&lt;/strong&gt; The AI doesn&amp;rsquo;t know your exact setup, your specific versions, or your constraints unless you tell it. When something doesn&amp;rsquo;t work, the most common reason is that you didn&amp;rsquo;t give it enough context.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Highly novel or recent topics.&lt;/strong&gt; If something was published after the model&amp;rsquo;s training cutoff, the AI either doesn&amp;rsquo;t know it or will confabulate. Ask about the cutoff date when relevant.&lt;/p&gt;
 &lt;hr&gt;
-&lt;h2 id="part-6-practical-workflow"&gt;Part 6: Practical Workflow
-&lt;/h2&gt;&lt;p&gt;Here is the workflow that consistently produces the best results:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;strong&gt;Before prompting&lt;/strong&gt;: write down in one sentence what you actually need. If you can&amp;rsquo;t do this, you&amp;rsquo;re not ready to prompt.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;strong&gt;First prompt&lt;/strong&gt;: include role, context, task, format, constraints, and what to avoid.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;strong&gt;Read the output critically&lt;/strong&gt;: is it answering the right question? Is it making assumptions you don&amp;rsquo;t agree with?&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;strong&gt;Iterate with targeted feedback&lt;/strong&gt;: don&amp;rsquo;t re-ask the whole question. Address the specific part that was wrong.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;strong&gt;Verify anything factual&lt;/strong&gt;: especially for technical configurations, check the documentation.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;strong&gt;Extract and adapt&lt;/strong&gt;: AI output is a starting point, not a final product. Edit it, adapt it to your context, make it yours.&lt;/p&gt;
-&lt;/li&gt;
+&lt;h2 id="part-7-practical-workflow"&gt;Part 7: Practical Workflow
+&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Before prompting&lt;/strong&gt;: write in one sentence what you actually need. If you can&amp;rsquo;t, you&amp;rsquo;re not ready to prompt.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;First prompt&lt;/strong&gt;: include role, context, task, format, constraints, negative constraints, and audience.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Read critically&lt;/strong&gt;: is it answering the right question? Is it being suspiciously agreeable?&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Self-critique pass&lt;/strong&gt;: ask it to criticize its own response before you iterate.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Iterate with targeted feedback&lt;/strong&gt;: address the specific part that was wrong, don&amp;rsquo;t re-ask the whole question.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Check confidence&lt;/strong&gt;: for anything factual or technical, ask what it&amp;rsquo;s uncertain about.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Verify independently&lt;/strong&gt;: especially for configurations, commands, and version-specific behavior.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Extract and adapt&lt;/strong&gt;: AI output is a starting point, not a final product.&lt;/li&gt;
 &lt;/ol&gt;
 &lt;hr&gt;
 &lt;h2 id="prompt-templates"&gt;Prompt Templates
-&lt;/h2&gt;&lt;p&gt;A few ready-to-use templates:&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Technical explanation:&lt;/strong&gt;&lt;/p&gt;
-&lt;pre tabindex="0"&gt;&lt;code&gt;Explain [topic] to someone who [audience description].
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Technical explanation:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;You are [role]. Explain [topic] to someone who [audience description].
 Focus on [specific aspect]. Avoid [what to avoid].
-Use [format: prose / bullet points / examples].
+After explaining, tell me what most people get wrong about this.
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Blog post:&lt;/strong&gt;&lt;/p&gt;
 &lt;pre tabindex="0"&gt;&lt;code&gt;Write a [word count] blog post about [topic] for [audience].
 Tone: [technical / casual / opinionated].
-Structure: [introduction / sections / conclusion or free-form].
-Do not use: [list of phrases/patterns to avoid].
+Do not use: [list of phrases to avoid].
 Key points to cover: [list].
+Here is an example of the writing style I want: [example paragraph].
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Code task:&lt;/strong&gt;&lt;/p&gt;
-&lt;pre tabindex="0"&gt;&lt;code&gt;Write a [language] script/function that [does what].
+&lt;pre tabindex="0"&gt;&lt;code&gt;Write a [language] script that [does what].
 Environment: [OS, version, constraints].
-It should handle: [edge cases].
+Edge cases to handle: [list].
 Do not use: [dependencies to avoid].
-Include: [comments / error handling / tests].
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Problem diagnosis:&lt;/strong&gt;&lt;/p&gt;
-&lt;pre tabindex="0"&gt;&lt;code&gt;I&amp;#39;m seeing this problem: [describe problem].
-Environment: [relevant details].
-What I&amp;#39;ve tried: [what you&amp;#39;ve already done].
-Error or symptom: [exact output].
-What is causing this and what are the steps to fix it?
+After writing it, identify any weaknesses or unhandled edge cases.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Debugging:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Environment: [OS, versions, relevant details].
+Problem: [describe symptom].
+What I&amp;#39;ve tried: [list].
+Exact error: [paste].
+Relevant config: [paste].
+
+Diagnose the root cause. Then tell me what would have prevented this.
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Decision analysis:&lt;/strong&gt;&lt;/p&gt;
-&lt;pre tabindex="0"&gt;&lt;code&gt;I&amp;#39;m deciding between [option A] and [option B] for [use case].
-My constraints are: [list].
-My priorities are: [list in order].
-Analyze the trade-offs and give me a recommendation.
-Challenge any assumptions I might be making.
+&lt;pre tabindex="0"&gt;&lt;code&gt;I&amp;#39;m deciding between [A] and [B] for [use case].
+Constraints: [list]. Priorities in order: [list].
+
+Give a recommendation.
+Then argue against it as strongly as you can.
+Then tell me what information would change your answer.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Security review:&lt;/strong&gt;&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Review this [config / script / architecture] for security weaknesses.
+Threat model: [who I&amp;#39;m protecting against, what assets matter].
+Be exhaustive. Include minor issues. Don&amp;#39;t soften findings.
+[paste content]
+After the review: what attack surface am I probably not thinking about?
 &lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
 &lt;h2 id="final-thought"&gt;Final Thought
-&lt;/h2&gt;&lt;p&gt;The gap between a mediocre AI interaction and a genuinely useful one is almost entirely determined by the quality of the prompt. AI assistants are powerful reasoning and generation tools — but they work &lt;em&gt;with&lt;/em&gt; you, not &lt;em&gt;for&lt;/em&gt; you. The more clearly you can define what you need, the more precisely you can give it context, and the more critically you can evaluate its output, the more value you&amp;rsquo;ll extract.&lt;/p&gt;
-&lt;p&gt;Treat it as a highly capable collaborator with no memory, no context about your life, and no awareness of your specific situation unless you provide all of that explicitly. Do that consistently, and the results will surprise you.&lt;/p&gt;</description></item></channel></rss>
+&lt;/h2&gt;&lt;p&gt;The gap between a mediocre AI interaction and a genuinely useful one is determined almost entirely by the quality of the prompt — and by understanding the system&amp;rsquo;s biases and limitations.&lt;/p&gt;
+&lt;p&gt;AI assistants will agree with you when they shouldn&amp;rsquo;t, sound confident when they&amp;rsquo;re uncertain, and produce plausible-sounding nonsense when they don&amp;rsquo;t know the answer. These are not bugs that will be fixed. They are structural properties of how these systems work.&lt;/p&gt;
+&lt;p&gt;The techniques in this guide exist to work around those properties: few-shot examples to guide output precisely, self-critique to surface weaknesses, steelmanning to break the agreement bias, confidence prompts to expose uncertainty, and structured decomposition to maintain quality on complex tasks.&lt;/p&gt;
+&lt;p&gt;Use AI as a highly capable collaborator with no memory, no context about your situation, a systematic bias toward agreement, and occasional blind confidence. Give it context explicitly, challenge it deliberately, and verify anything consequential. Do that consistently, and the results will be significantly better than what most people get.&lt;/p&gt;</description></item></channel></rss>
