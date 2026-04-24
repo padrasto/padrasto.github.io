@@ -1,0 +1,155 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="Prompts, techniques, mental models and real tricks to extract the full potential of AI assistants. No fluff — just what actually works."><title>How to Get the Most Out of AI: A Complete Practical Guide</title><link rel=canonical href=https://padrasto.github.io/post/how-to-get-the-most-out-of-ai/><link rel=preconnect href=https://fonts.googleapis.com><link rel=preconnect href=https://fonts.gstatic.com crossorigin><link rel=preload as=style href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap"><link rel=stylesheet href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap"><link rel=stylesheet href=/scss/style.min.389e156f5e9bb13df5a924cfa99dfb9c39f3e01e68d9e146cd65bdae963be145.css><meta property='og:title' content="How to Get the Most Out of AI: A Complete Practical Guide"><meta property='og:description' content="Prompts, techniques, mental models and real tricks to extract the full potential of AI assistants. No fluff — just what actually works."><meta property='og:url' content='https://padrasto.github.io/post/how-to-get-the-most-out-of-ai/'><meta property='og:site_name' content="Padrasto's Linux Lab"><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='AI'><meta property='article:tag' content='Productivity'><meta property='article:tag' content='Prompting'><meta property='article:tag' content='Tools'><meta property='article:published_time' content='2026-04-24T00:00:00+00:00'><meta property='article:modified_time' content='2026-04-24T00:00:00+00:00'><meta name=twitter:title content="How to Get the Most Out of AI: A Complete Practical Guide"><meta name=twitter:description content="Prompts, techniques, mental models and real tricks to extract the full potential of AI assistants. No fluff — just what actually works."></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"dark")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar.jpeg width=460 height=460 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>🐧</span></figure><div class=site-meta><h1 class=site-name><a href=/>Padrasto's Linux Lab</a></h1><h2 class=site-description>Linux sysadmin notes, homelab experiments, and open-source tools.</h2></div></header><ol class=menu-social><li><a href=https://github.com/padrasto title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/page/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav class=toc-nav id=TableOfContents><ul><li><a href=#the-fundamental-mental-model>The Fundamental Mental Model</a></li><li><a href=#part-1-prompt-structure-basics>Part 1: Prompt Structure Basics</a><ul><li><a href=#be-specific-about-what-you-want>Be specific about what you want</a></li><li><a href=#define-the-role>Define the role</a></li><li><a href=#define-the-audience>Define the audience</a></li><li><a href=#define-the-format>Define the format</a></li></ul></li><li><a href=#part-2-context-is-everything>Part 2: Context is Everything</a><ul><li><a href=#the-more-context-the-better-the-output>The more context, the better the output</a></li><li><a href=#paste-the-actual-content>Paste the actual content</a></li><li><a href=#provide-negative-examples>Provide negative examples</a></li></ul></li><li><a href=#part-3-advanced-techniques>Part 3: Advanced Techniques</a><ul><li><a href=#chain-of-thought--make-the-ai-reason-step-by-step>Chain of Thought — make the AI reason step by step</a></li><li><a href=#the-socratic-approach--ask-it-to-challenge-you>The Socratic approach — ask it to challenge you</a></li><li><a href=#iterative-refinement--treat-it-as-a-conversation>Iterative refinement — treat it as a conversation</a></li><li><a href=#ask-for-alternatives>Ask for alternatives</a></li><li><a href=#use-xml-or-structured-tags-for-complex-prompts>Use XML or structured tags for complex prompts</a></li><li><a href=#ask-for-the-reasoning-not-just-the-answer>Ask for the reasoning, not just the answer</a></li><li><a href=#use-the-ai-to-improve-your-own-prompts>Use the AI to improve your own prompts</a></li></ul></li><li><a href=#part-4-specific-use-cases>Part 4: Specific Use Cases</a><ul><li><a href=#writing-and-editing>Writing and editing</a></li><li><a href=#code-and-scripting>Code and scripting</a></li><li><a href=#research-and-analysis>Research and analysis</a></li><li><a href=#learning-new-topics>Learning new topics</a></li></ul></li><li><a href=#part-5-what-ai-is-bad-at>Part 5: What AI Is Bad At</a></li><li><a href=#part-6-practical-workflow>Part 6: Practical Workflow</a></li><li><a href=#prompt-templates>Prompt Templates</a></li><li><a href=#final-thought>Final Thought</a></li></ul></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/guides/ style=background-color:#beefeb;color:#0f3d3a>Guides</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/post/how-to-get-the-most-out-of-ai/>How to Get the Most Out of AI: A Complete Practical Guide</a></h2><h3 class=article-subtitle>Prompts, techniques, mental models and real tricks to extract the full potential of AI assistants. No fluff — just what actually works.</h3></div><footer class=article-meta><div class=inline-meta><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2026-04-24T00:00:00Z>Friday, April 24, 2026</time>
+<svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>10 minutes read</time></div></footer></div></header><aside class=article-toc><details><summary><div class=article-toc-title><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6-6 6"/></svg>
+<span>Table of contents</span></div></summary><nav class=toc-nav><ul><li><a href=#the-fundamental-mental-model>The Fundamental Mental Model</a></li><li><a href=#part-1-prompt-structure-basics>Part 1: Prompt Structure Basics</a><ul><li><a href=#be-specific-about-what-you-want>Be specific about what you want</a></li><li><a href=#define-the-role>Define the role</a></li><li><a href=#define-the-audience>Define the audience</a></li><li><a href=#define-the-format>Define the format</a></li></ul></li><li><a href=#part-2-context-is-everything>Part 2: Context is Everything</a><ul><li><a href=#the-more-context-the-better-the-output>The more context, the better the output</a></li><li><a href=#paste-the-actual-content>Paste the actual content</a></li><li><a href=#provide-negative-examples>Provide negative examples</a></li></ul></li><li><a href=#part-3-advanced-techniques>Part 3: Advanced Techniques</a><ul><li><a href=#chain-of-thought--make-the-ai-reason-step-by-step>Chain of Thought — make the AI reason step by step</a></li><li><a href=#the-socratic-approach--ask-it-to-challenge-you>The Socratic approach — ask it to challenge you</a></li><li><a href=#iterative-refinement--treat-it-as-a-conversation>Iterative refinement — treat it as a conversation</a></li><li><a href=#ask-for-alternatives>Ask for alternatives</a></li><li><a href=#use-xml-or-structured-tags-for-complex-prompts>Use XML or structured tags for complex prompts</a></li><li><a href=#ask-for-the-reasoning-not-just-the-answer>Ask for the reasoning, not just the answer</a></li><li><a href=#use-the-ai-to-improve-your-own-prompts>Use the AI to improve your own prompts</a></li></ul></li><li><a href=#part-4-specific-use-cases>Part 4: Specific Use Cases</a><ul><li><a href=#writing-and-editing>Writing and editing</a></li><li><a href=#code-and-scripting>Code and scripting</a></li><li><a href=#research-and-analysis>Research and analysis</a></li><li><a href=#learning-new-topics>Learning new topics</a></li></ul></li><li><a href=#part-5-what-ai-is-bad-at>Part 5: What AI Is Bad At</a></li><li><a href=#part-6-practical-workflow>Part 6: Practical Workflow</a></li><li><a href=#prompt-templates>Prompt Templates</a></li><li><a href=#final-thought>Final Thought</a></li></ul></nav></details></aside><section class=article-content><p>AI assistants are genuinely useful tools — but most people use roughly 10% of their potential. They ask a vague question, get a mediocre answer, and conclude that AI is overhyped. The problem is almost never the AI. It&rsquo;s the prompt.</p><p>This guide covers everything I&rsquo;ve learned about extracting real value from AI: how to structure prompts, how to think about context, advanced techniques, and the mental models that separate people who get great results from those who don&rsquo;t.</p><hr><h2 id=the-fundamental-mental-model>The Fundamental Mental Model</h2><p>Before any technique, you need the right mental model.</p><p><strong>AI is not a search engine.</strong> Don&rsquo;t ask it for a list of links or a summary of what&rsquo;s on the internet. It&rsquo;s a reasoning system trained on vast amounts of text that can generate, analyze, transform, and critique content.</p><p><strong>AI is not a magic oracle.</strong> It doesn&rsquo;t &ldquo;know&rdquo; things the way you know your own name. It predicts likely, coherent, useful completions based on context. The better the context you give, the better the output.</p><p><strong>The prompt is the program.</strong> Every word you write shapes the output. Vague input produces vague output. Precise, structured input produces precise, structured output.</p><hr><h2 id=part-1-prompt-structure-basics>Part 1: Prompt Structure Basics</h2><h3 id=be-specific-about-what-you-want>Be specific about what you want</h3><p>Vague:</p><pre tabindex=0><code>Write something about Linux security.
+</code></pre><p>Specific:</p><pre tabindex=0><code>Write a 600-word blog post for intermediate Linux users explaining the
+difference between AppArmor and SELinux. Focus on practical use cases,
+not theory. Use a direct, technical tone. No marketing language.
+</code></pre><p>The second prompt gives the AI: a length target, an audience, a scope, a focus, and a tone. Every one of those constraints improves the output.</p><h3 id=define-the-role>Define the role</h3><p>Priming the AI with a role dramatically shifts the quality and style of responses:</p><pre tabindex=0><code>You are a senior Linux system administrator with 15 years of experience
+in Debian-based systems. Explain how to harden an SSH server for a
+homelab that is occasionally exposed to the internet.
+</code></pre><p>The role acts as a filter — it biases the AI toward the vocabulary, depth, and assumptions appropriate for that persona.</p><h3 id=define-the-audience>Define the audience</h3><pre tabindex=0><code>Explain Docker networking to someone who understands Linux networking
+basics but has never used containers before.
+</code></pre><p>vs.</p><pre tabindex=0><code>Explain Docker networking assuming the reader is a senior DevOps engineer
+already familiar with namespaces and cgroups.
+</code></pre><p>Same topic, completely different output.</p><h3 id=define-the-format>Define the format</h3><p>If you need structured output, ask for it explicitly:</p><pre tabindex=0><code>Give me the answer as a markdown table with three columns:
+Tool | Use Case | Limitations
+</code></pre><p>Or:</p><pre tabindex=0><code>Structure your response with:
+1. A one-paragraph summary
+2. The three main advantages
+3. The three main risks
+4. A recommendation
+</code></pre><hr><h2 id=part-2-context-is-everything>Part 2: Context is Everything</h2><h3 id=the-more-context-the-better-the-output>The more context, the better the output</h3><p>AI has no memory between conversations (unless explicitly provided). Every conversation starts from zero. Front-load everything relevant:</p><p><strong>Bad:</strong></p><pre tabindex=0><code>Fix this script.
+</code></pre><p><strong>Good:</strong></p><pre tabindex=0><code>I&#39;m running Debian 13 on an x86_64 machine with a 6.12 kernel.
+This bash script is supposed to back up /etc to a remote server via rsync
+over SSH using a key at ~/.ssh/backup_key. It runs via cron at 2am.
+The problem: it silently fails when the remote server is unreachable,
+leaving no log. Fix it so it logs success and failure to /var/log/backup.log
+and sends me an email on failure via msmtp.
+
+[paste script here]
+</code></pre><h3 id=paste-the-actual-content>Paste the actual content</h3><p>If you&rsquo;re asking about a config file, a script, an error message, or a document — paste it. Don&rsquo;t describe it. The AI works with real content far better than with your description of content.</p><h3 id=provide-negative-examples>Provide negative examples</h3><p>Tell the AI what you <em>don&rsquo;t</em> want:</p><pre tabindex=0><code>Write a blog introduction about WireGuard. Do not use phrases like
+&#34;In today&#39;s world&#34;, &#34;In this article we will&#34;, or &#34;game-changer&#34;.
+Do not start with a question. Be direct and assume the reader already
+knows what a VPN is.
+</code></pre><p>Negative constraints are underused and extremely effective.</p><hr><h2 id=part-3-advanced-techniques>Part 3: Advanced Techniques</h2><h3 id=chain-of-thought--make-the-ai-reason-step-by-step>Chain of Thought — make the AI reason step by step</h3><p>For complex problems, explicitly ask the AI to think through the problem before giving an answer:</p><pre tabindex=0><code>Before answering, think through this step by step. Then give me
+your conclusion.
+</code></pre><p>Or simply add: <code>Let's think through this carefully.</code></p><p>This technique significantly improves accuracy on logic, math, and multi-step reasoning problems. The AI produces better answers when it &ldquo;shows its work.&rdquo;</p><h3 id=the-socratic-approach--ask-it-to-challenge-you>The Socratic approach — ask it to challenge you</h3><pre tabindex=0><code>I&#39;m planning to set up a Tor hidden service for my personal blog.
+Here is my current plan: [describe plan].
+
+Act as a security auditor. Challenge every assumption. Point out what
+I&#39;m getting wrong, what I&#39;m missing, and what risks I haven&#39;t considered.
+Be direct and don&#39;t soften the criticism.
+</code></pre><p>Using AI as an adversarial reviewer is one of the most powerful but underused techniques.</p><h3 id=iterative-refinement--treat-it-as-a-conversation>Iterative refinement — treat it as a conversation</h3><p>Don&rsquo;t expect perfection on the first prompt. Iterate:</p><ol><li>Get a first draft</li><li>Identify what&rsquo;s wrong or missing</li><li>Give targeted feedback</li><li>Repeat</li></ol><pre tabindex=0><code>The second paragraph is too vague. Rewrite it with a concrete example
+using nginx as the web server.
+</code></pre><pre tabindex=0><code>Good, but the tone is too formal. Make it sound more like a blog post
+written by a practitioner, not a documentation writer.
+</code></pre><p>Each iteration sharpens the output.</p><h3 id=ask-for-alternatives>Ask for alternatives</h3><pre tabindex=0><code>Give me three different ways to approach this problem. For each one,
+explain the trade-offs.
+</code></pre><p>This forces the AI to explore the solution space instead of defaulting to the first plausible answer.</p><h3 id=use-xml-or-structured-tags-for-complex-prompts>Use XML or structured tags for complex prompts</h3><p>For long, multi-part prompts, structure helps the AI parse what you&rsquo;re asking:</p><pre tabindex=0><code>&lt;context&gt;
+I run a homelab with three machines: a desktop running Debian 13,
+a ThinkPad T480 as a portable server, and a ThinkPad X270 as
+a dedicated home server running CasaOS.
+&lt;/context&gt;
+
+&lt;task&gt;
+Design a backup strategy that covers all three machines with
+off-site redundancy, using only open-source tools and no cloud services.
+&lt;/task&gt;
+
+&lt;constraints&gt;
+- Budget: zero (no paid services)
+- Internet: 100Mbps asymmetric fiber
+- Storage available: 2TB on the X270
+- Must work without a static IP
+&lt;/constraints&gt;
+</code></pre><h3 id=ask-for-the-reasoning-not-just-the-answer>Ask for the reasoning, not just the answer</h3><pre tabindex=0><code>Why is this the right approach? What are the assumptions behind it?
+Under what circumstances would this be wrong?
+</code></pre><p>This helps you evaluate the answer instead of blindly trusting it.</p><h3 id=use-the-ai-to-improve-your-own-prompts>Use the AI to improve your own prompts</h3><pre tabindex=0><code>I want to ask you about [topic] but I&#39;m not sure how to frame the
+question to get the most useful answer. How should I prompt you?
+</code></pre><p>Meta-prompting. The AI will tell you what information it needs to give you a better response.</p><hr><h2 id=part-4-specific-use-cases>Part 4: Specific Use Cases</h2><h3 id=writing-and-editing>Writing and editing</h3><p>For writing, be explicit about:</p><ul><li><strong>Audience</strong>: who is reading this?</li><li><strong>Tone</strong>: technical, casual, formal, opinionated?</li><li><strong>Length</strong>: approximate word count</li><li><strong>Structure</strong>: headers, bullet points, prose?</li><li><strong>What to avoid</strong>: clichés, filler phrases, passive voice</li></ul><p>For editing existing text:</p><pre tabindex=0><code>Edit this text for clarity and conciseness. Cut anything that doesn&#39;t
+add meaning. Do not change the technical content or the author&#39;s voice.
+[paste text]
+</code></pre><h3 id=code-and-scripting>Code and scripting</h3><p>Always provide:</p><ul><li>The language and version</li><li>The OS and environment</li><li>What the code currently does</li><li>What it should do instead</li><li>Any constraints (no external dependencies, must run as non-root, etc.)</li></ul><pre tabindex=0><code>Write a bash script for Debian 13 that monitors disk usage on /dev/sda1
+and sends an alert via ntfy.sh if usage exceeds 85%. It should run via
+systemd timer every 30 minutes. No external dependencies beyond curl.
+Include the systemd unit files.
+</code></pre><p>For debugging, paste the exact error:</p><pre tabindex=0><code>This command returns the following error:
+[exact error message]
+
+Here is the relevant section of the config:
+[paste config]
+
+What is causing this and how do I fix it?
+</code></pre><h3 id=research-and-analysis>Research and analysis</h3><pre tabindex=0><code>I&#39;m trying to understand the trade-offs between WireGuard and OpenVPN
+for a homelab setup where I need road warrior access from a laptop.
+I already know both use strong encryption. Focus on: connection
+reliability on mobile networks, kill switch behavior, and ease of
+key management. Don&#39;t give me an introductory explanation of what
+a VPN is.
+</code></pre><h3 id=learning-new-topics>Learning new topics</h3><pre tabindex=0><code>I want to understand how LUKS full disk encryption works at a
+technical level — not how to use it, but how it works internally:
+key derivation, the LUKS header structure, what happens at boot.
+Assume I understand Linux, filesystems, and basic cryptography
+concepts. Use analogies where they help, but don&#39;t oversimplify.
+</code></pre><hr><h2 id=part-5-what-ai-is-bad-at>Part 5: What AI Is Bad At</h2><p>Knowing the limits is as important as knowing the techniques.</p><p><strong>Verifying current facts.</strong> AI knowledge has a cutoff date and can be wrong about recent events, current software versions, or anything that changes frequently. Always verify with primary sources.</p><p><strong>Math involving large numbers or multi-step calculations.</strong> AI can reason about math conceptually but makes arithmetic errors. Use it to set up problems, not to execute them.</p><p><strong>Knowing what it doesn&rsquo;t know.</strong> AI can be confidently wrong. It doesn&rsquo;t always flag uncertainty. The more obscure the topic, the higher the risk of plausible-sounding but incorrect information.</p><p><strong>Legal, medical, and financial specifics.</strong> Use AI for general understanding, never for specific advice in high-stakes domains.</p><p><strong>Your specific environment.</strong> The AI doesn&rsquo;t know your exact setup, your specific versions, or your constraints unless you tell it. When something doesn&rsquo;t work, the most common reason is that you didn&rsquo;t give it enough context.</p><hr><h2 id=part-6-practical-workflow>Part 6: Practical Workflow</h2><p>Here is the workflow that consistently produces the best results:</p><ol><li><p><strong>Before prompting</strong>: write down in one sentence what you actually need. If you can&rsquo;t do this, you&rsquo;re not ready to prompt.</p></li><li><p><strong>First prompt</strong>: include role, context, task, format, constraints, and what to avoid.</p></li><li><p><strong>Read the output critically</strong>: is it answering the right question? Is it making assumptions you don&rsquo;t agree with?</p></li><li><p><strong>Iterate with targeted feedback</strong>: don&rsquo;t re-ask the whole question. Address the specific part that was wrong.</p></li><li><p><strong>Verify anything factual</strong>: especially for technical configurations, check the documentation.</p></li><li><p><strong>Extract and adapt</strong>: AI output is a starting point, not a final product. Edit it, adapt it to your context, make it yours.</p></li></ol><hr><h2 id=prompt-templates>Prompt Templates</h2><p>A few ready-to-use templates:</p><p><strong>Technical explanation:</strong></p><pre tabindex=0><code>Explain [topic] to someone who [audience description].
+Focus on [specific aspect]. Avoid [what to avoid].
+Use [format: prose / bullet points / examples].
+</code></pre><p><strong>Blog post:</strong></p><pre tabindex=0><code>Write a [word count] blog post about [topic] for [audience].
+Tone: [technical / casual / opinionated].
+Structure: [introduction / sections / conclusion or free-form].
+Do not use: [list of phrases/patterns to avoid].
+Key points to cover: [list].
+</code></pre><p><strong>Code task:</strong></p><pre tabindex=0><code>Write a [language] script/function that [does what].
+Environment: [OS, version, constraints].
+It should handle: [edge cases].
+Do not use: [dependencies to avoid].
+Include: [comments / error handling / tests].
+</code></pre><p><strong>Problem diagnosis:</strong></p><pre tabindex=0><code>I&#39;m seeing this problem: [describe problem].
+Environment: [relevant details].
+What I&#39;ve tried: [what you&#39;ve already done].
+Error or symptom: [exact output].
+What is causing this and what are the steps to fix it?
+</code></pre><p><strong>Decision analysis:</strong></p><pre tabindex=0><code>I&#39;m deciding between [option A] and [option B] for [use case].
+My constraints are: [list].
+My priorities are: [list in order].
+Analyze the trade-offs and give me a recommendation.
+Challenge any assumptions I might be making.
+</code></pre><hr><h2 id=final-thought>Final Thought</h2><p>The gap between a mediocre AI interaction and a genuinely useful one is almost entirely determined by the quality of the prompt. AI assistants are powerful reasoning and generation tools — but they work <em>with</em> you, not <em>for</em> you. The more clearly you can define what you need, the more precisely you can give it context, and the more critically you can evaluate its output, the more value you&rsquo;ll extract.</p><p>Treat it as a highly capable collaborator with no memory, no context about your life, and no awareness of your specific situation unless you provide all of that explicitly. Do that consistently, and the results will surprise you.</p></section><footer class="article-meta article-footer"><section class=article-tags><a href=/tags/ai/>AI</a>
+<a href=/tags/productivity/>Productivity</a>
+<a href=/tags/prompting/>Prompting</a>
+<a href=/tags/tools/>Tools</a></section></footer></article><footer class=site-footer><section class=copyright>&copy;
+2026 Padrasto's Linux Lab</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=4.0.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><script type=module>
+    import gallery from '\/ts\/gallery.js';
+
+    const articleContent = document.querySelector('.article-content');
+    const shouldLoad = articleContent && (articleContent.querySelectorAll('figure').length > 0 || articleContent.querySelectorAll('img.gallery-image').length > 0);
+    
+    if (shouldLoad) {
+        gallery(articleContent);
+
+        const PhotoSwipeLightbox = (await import("https:\/\/cdn.jsdelivr.net\/npm\/photoswipe@5.4.4\/dist\/photoswipe-lightbox.esm.min.js")).default;
+        const styleHref = "https:\/\/cdn.jsdelivr.net\/npm\/photoswipe@5.4.4\/dist\/photoswipe.css";
+
+        const styleTag = document.createElement('link');
+        styleTag.rel = 'stylesheet';
+        styleTag.href = styleHref;
+        document.head.appendChild(styleTag);
+
+        const lightbox = new PhotoSwipeLightbox({
+            gallerySelector: '.article-content',
+            childSelector: 'figure a.image-link',
+            pswpModule: () => import("https:\/\/cdn.jsdelivr.net\/npm\/photoswipe@5.4.4\/dist\/photoswipe.esm.min.js")
+        });
+        lightbox.init();
+    }
+</script></main></div><script type=text/javascript src=/ts/main.acaf849f2b273f6a8368a58b001f336738d0c948d92e79b116467d0c7515f932.js defer></script></body></html>
