@@ -59,7 +59,7 @@ iface enp0s25 inet static
 </span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none><code class=language-bash data-lang=bash><span style=display:flex><span>sudo update-grub
 </span></span></code></pre></div><p>If you have a desktop environment installed, you can use DPMS instead: <code>xset dpms 300 300 300</code> — add it to <code>~/.bashrc</code> to make it permanent.</p><hr><h2 id=summary>Summary</h2><div class=table-wrapper><table><thead><tr><th>Goal</th><th>Solution</th></tr></thead><tbody><tr><td>CasaOS + Jellyfin + Immich</td><td>Official script from casaos.io</td></tr><tr><td>Static local IP</td><td><code>/etc/network/interfaces</code> or <code>nmcli</code></td></tr><tr><td>Battery protected (20–80%)</td><td>TLP with charge thresholds</td></tr><tr><td>Lid closed without suspend</td><td><code>logind.conf</code> → <code>HandleLidSwitch=ignore</code></td></tr><tr><td>Screen blanks at 5 min</td><td>GRUB → <code>consoleblank=300</code></td></tr></tbody></table></div><blockquote><p><strong>Before you finish:</strong> Reboot after all changes — especially the GRUB and logind ones — to make sure everything is active. CasaOS starts automatically on boot.</p></blockquote></section><footer class="article-meta article-footer"><section class=article-tags><a href=/tags/thinkpad/>Thinkpad</a>
 <a href=/tags/debian/>Debian</a>
-<a href=/tags/casaos/>Casaos</a>
+<a href=/tags/casaos/>CasaOS</a>
 <a href=/tags/homelab/>Homelab</a>
 <a href=/tags/jellyfin/>Jellyfin</a>
 <a href=/tags/immich/>Immich</a>
